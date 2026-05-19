@@ -1,0 +1,21 @@
+# ninja log v5
+0	16	1779208893244687202	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-mkdir	e44b698a373beb5e
+0	16	1779208893244687202	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-mkdir	e44b698a373beb5e
+16	118419	1779209011648277875	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-download	ba4ddc51f9dd5d3
+16	118419	1779209011648277875	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-download	ba4ddc51f9dd5d3
+118419	118434	0	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-update	cb04633e90ae0070
+118419	118434	0	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-update	cb04633e90ae0070
+118434	118450	1779209011679748909	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-patch	35b0ecdee41a3003
+118434	118450	1779209011679748909	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-patch	35b0ecdee41a3003
+118450	118466	1779209011699418306	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-configure	82f8922c0341178a
+118450	118466	1779209011699418306	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-configure	82f8922c0341178a
+118466	118483	1779209011715153823	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-build	5646e10725f3bfa8
+118466	118483	1779209011715153823	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-build	5646e10725f3bfa8
+118483	118500	1779209011730889340	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-install	ecb3a7ce15033305
+118483	118500	1779209011730889340	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-install	ecb3a7ce15033305
+118500	118517	1779209011746624857	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-test	7aa7a0d828250fa3
+118500	118517	1779209011746624857	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-test	7aa7a0d828250fa3
+118517	118541	1779209011774162012	CMakeFiles/dr_libs-populate-complete	feb5757cfc6a4f0f
+118517	118541	1779209011774162012	dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-done	feb5757cfc6a4f0f
+118517	118541	1779209011774162012	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/CMakeFiles/dr_libs-populate-complete	feb5757cfc6a4f0f
+118517	118541	1779209011774162012	/home/go29net/dev/oot_rl/build-cmake/_deps/dr_libs-subbuild/dr_libs-populate-prefix/src/dr_libs-populate-stamp/dr_libs-populate-done	feb5757cfc6a4f0f

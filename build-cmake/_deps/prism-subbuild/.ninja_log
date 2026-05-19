@@ -1,0 +1,21 @@
+# ninja log v5
+0	17	1779208887293349734	prism-populate-prefix/src/prism-populate-stamp/prism-populate-mkdir	491841f02e969c0
+0	17	1779208887293349734	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-mkdir	491841f02e969c0
+17	787	1779208888065677920	prism-populate-prefix/src/prism-populate-stamp/prism-populate-download	527a7f1b99b4a450
+17	787	1779208888065677920	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-download	527a7f1b99b4a450
+787	817	0	prism-populate-prefix/src/prism-populate-stamp/prism-populate-update	f754e2dd9af674d
+787	817	0	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-update	f754e2dd9af674d
+817	853	1779208888128405082	prism-populate-prefix/src/prism-populate-stamp/prism-populate-patch	6c11fd40f1b553e6
+817	853	1779208888128405082	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-patch	6c11fd40f1b553e6
+853	883	1779208888159768663	prism-populate-prefix/src/prism-populate-stamp/prism-populate-configure	27ee006c27ddb624
+853	883	1779208888159768663	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-configure	27ee006c27ddb624
+883	917	1779208888191132244	prism-populate-prefix/src/prism-populate-stamp/prism-populate-build	1dc3ac7475f7ea84
+883	917	1779208888191132244	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-build	1dc3ac7475f7ea84
+917	951	1779208888230336721	prism-populate-prefix/src/prism-populate-stamp/prism-populate-install	748bc998e73de559
+917	951	1779208888230336721	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-install	748bc998e73de559
+951	975	1779208888253859407	prism-populate-prefix/src/prism-populate-stamp/prism-populate-test	71f7c79a8ea5c502
+951	975	1779208888253859407	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-test	71f7c79a8ea5c502
+983	1014	1779208888289143435	CMakeFiles/prism-populate-complete	d57f9cd7ba6d2d67
+983	1014	1779208888289143435	prism-populate-prefix/src/prism-populate-stamp/prism-populate-done	d57f9cd7ba6d2d67
+983	1014	1779208888289143435	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/CMakeFiles/prism-populate-complete	d57f9cd7ba6d2d67
+983	1014	1779208888289143435	/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/prism-populate-prefix/src/prism-populate-stamp/prism-populate-done	d57f9cd7ba6d2d67

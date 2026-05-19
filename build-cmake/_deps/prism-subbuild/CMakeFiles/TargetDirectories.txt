@@ -1,0 +1,3 @@
+/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/CMakeFiles/prism-populate.dir
+/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/CMakeFiles/edit_cache.dir
+/home/go29net/dev/oot_rl/build-cmake/_deps/prism-subbuild/CMakeFiles/rebuild_cache.dir

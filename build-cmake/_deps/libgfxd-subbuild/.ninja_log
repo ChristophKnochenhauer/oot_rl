@@ -1,0 +1,21 @@
+# ninja log v5
+0	19	1779208885391932626	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-mkdir	7e26d4ee7718e226
+0	19	1779208885391932626	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-mkdir	7e26d4ee7718e226
+19	731	1779208886105454097	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-download	37d13bba6f2f0794
+19	731	1779208886105454097	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-download	37d13bba6f2f0794
+731	747	0	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-update	d4d2e12a6bddf8de
+731	747	0	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-update	d4d2e12a6bddf8de
+747	765	1779208886140738126	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-patch	7ebd7eb0e91669da
+747	765	1779208886140738126	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-patch	7ebd7eb0e91669da
+765	783	1779208886156419917	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-configure	54d69cb34b6a95bb
+765	783	1779208886156419917	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-configure	54d69cb34b6a95bb
+783	800	1779208886176022155	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-build	370c042268f10099
+783	800	1779208886176022155	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-build	370c042268f10099
+800	817	1779208886191703945	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-install	72f81c5e9382399a
+800	817	1779208886191703945	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-install	72f81c5e9382399a
+817	835	1779208886207385736	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-test	1c6c8a41154f03fc
+817	835	1779208886207385736	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-test	1c6c8a41154f03fc
+835	860	1779208886234828870	CMakeFiles/libgfxd-populate-complete	f2196ba1b998f181
+835	860	1779208886234828870	libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-done	f2196ba1b998f181
+835	860	1779208886234828870	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/CMakeFiles/libgfxd-populate-complete	f2196ba1b998f181
+835	860	1779208886234828870	/home/go29net/dev/oot_rl/build-cmake/_deps/libgfxd-subbuild/libgfxd-populate-prefix/src/libgfxd-populate-stamp/libgfxd-populate-done	f2196ba1b998f181

@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/CMakeFiles/stormlib-populate"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/CMakeFiles/stormlib-populate.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/CMakeFiles/stormlib-populate-complete.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-build.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-configure.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-download.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-install.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-patch.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-test.rule"
+		},
+		{
+			"file" : "/home/go29net/dev/oot_rl/build-cmake/_deps/stormlib-subbuild/stormlib-populate-prefix/src/stormlib-populate-stamp/stormlib-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"stormlib-populate"
+		],
+		"name" : "stormlib-populate"
+	}
+}
