@@ -12,7 +12,7 @@ echo "==> Configuring..."
 cmake -S . -B "$BUILD_DIR" -GNinja
 
 echo "==> Building..."
-cmake --build "$BUILD_DIR" --target soh
+cmake --build "$BUILD_DIR" "$@"
 
 echo ""
 echo "Build complete."
