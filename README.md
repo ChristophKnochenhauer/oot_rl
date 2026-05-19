@@ -27,5 +27,7 @@ sudo apt-get install \
     libvorbis-dev
 git clone https://github.com/ChristophKnochenhauer/oot_rl.git
 cd oot_rl
-
+git submodule update --init --recursive
+cmake -H. -Bbuild-cmake -GNinja
+cmake --build build-cmake --target soh
 ```
