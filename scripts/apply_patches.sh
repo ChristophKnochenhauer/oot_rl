@@ -6,7 +6,7 @@ SOH_DIR="$REPO_ROOT/external/Shipwright"
 PATCH_DIR="$REPO_ROOT/patches"
 SENTINEL="$SOH_DIR/.patches_applied"
 
-if [[ ! -d "$SOH_DIR/.git" ]]; then
+if [[ ! -e "$SOH_DIR/.git" ]]; then
     echo "error: Shipwright submodule not initialised." >&2
     echo "Run: git submodule update --init --recursive" >&2
     exit 1

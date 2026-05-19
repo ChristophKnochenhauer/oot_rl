@@ -27,6 +27,6 @@ sudo apt-get install \
     libvorbis-dev
 git clone --recurse-submodules -j8 https://github.com/ChristophKnochenhauer/oot_rl.git
 cd oot_rl
-chmod +x ./scripts/build.sh
+chmod +x ./scripts/*
 ./scripts/build.sh
 ```
