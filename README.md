@@ -25,9 +25,8 @@ sudo apt-get install \
     libopengl-dev \
     libopusfile-dev \
     libvorbis-dev
-git clone https://github.com/ChristophKnochenhauer/oot_rl.git
+git clone --recurse-submodules -j8 https://github.com/ChristophKnochenhauer/oot_rl.git
 cd oot_rl
-git submodule update --init --recursive
-cmake -H. -Bbuild-cmake -GNinja
-cmake --build build-cmake --target hello
+chmod +x ./scripts/build.sh
+./scripts/build.sh
 ```
