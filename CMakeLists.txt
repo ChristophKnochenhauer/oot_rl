@@ -14,8 +14,9 @@ foreach(_conda_dir "$ENV{HOME}/miniconda3" "$ENV{HOME}/anaconda3" "/opt/conda")
     endif()
 endforeach()
 
+set(BUILD_AS_LIB ON CACHE BOOL "Build SoH as a library" FORCE)
+
 add_subdirectory(external/Shipwright EXCLUDE_FROM_ALL)
 
 add_executable(hello src/hello.cpp)
-
-target_link_libraries(hello PRIVATE libultraship)
+target_link_libraries(hello PRIVATE libultraship soh)

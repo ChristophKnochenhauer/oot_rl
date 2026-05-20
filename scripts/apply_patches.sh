@@ -15,9 +15,15 @@ fi
 cd "$SOH_DIR"
 
 CURRENT_COMMIT="$(git rev-parse HEAD)"
+if compgen -G "$PATCH_DIR"/[0-9]*.patch > /dev/null; then
+    PATCHES_HASH="$(cat "$PATCH_DIR"/[0-9]*.patch | sha256sum | awk '{print $1}')"
+else
+    PATCHES_HASH="no-patches"
+fi
+SENTINEL_VALUE="${CURRENT_COMMIT}:${PATCHES_HASH}"
 
-if [[ -f "$SENTINEL" ]] && [[ "$(cat "$SENTINEL")" == "$CURRENT_COMMIT" ]]; then
-    echo "Patches already applied for commit $CURRENT_COMMIT"
+if [[ -f "$SENTINEL" ]] && [[ "$(cat "$SENTINEL")" == "$SENTINEL_VALUE" ]]; then
+    echo "Patches already applied (commit $CURRENT_COMMIT, $(ls "$PATCH_DIR"/[0-9]*.patch 2>/dev/null | wc -l) patches)"
     exit 0
 fi
 
@@ -45,5 +51,5 @@ for p in "${patches[@]}"; do
     fi
 done
 
-echo "$CURRENT_COMMIT" > "$SENTINEL"
+echo "$SENTINEL_VALUE" > "$SENTINEL"
 echo "All ${#patches[@]} patches applied successfully."
