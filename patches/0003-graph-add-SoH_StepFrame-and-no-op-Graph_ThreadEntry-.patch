@@ -1,0 +1,85 @@
+From cc03a3c26ffccef2452a441e3025859e883ef84a Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Wed, 20 May 2026 14:01:07 +0200
+Subject: [PATCH] graph: add SoH_StepFrame and no-op Graph_ThreadEntry in lib
+ mode
+
+When BUILD_AS_LIB=ON, expose SoH_StepFrame() as the external entry
+point for advancing the game one frame. Graph_ThreadEntry becomes a
+no-op so the internal infinite loop is bypassed; external code
+(e.g. an RL environment) drives the frame loop instead.
+
+The existing RunFrame() coroutine pattern (switch/goto on
+runFrameContext.state) is preserved, so SoH_StepFrame can be called
+repeatedly to advance through game states correctly.
+---
+ soh/CMakeLists.txt  | 17 ++++++++++++-----
+ soh/src/code/main.c |  2 ++
+ 2 files changed, 14 insertions(+), 5 deletions(-)
+
+diff --git a/soh/CMakeLists.txt b/soh/CMakeLists.txt
+index 31955ebf9..620491dc6 100644
+--- a/soh/CMakeLists.txt
++++ b/soh/CMakeLists.txt
+@@ -223,7 +223,14 @@ set(ALL_FILES
+ ################################################################################
+ # Target
+ ################################################################################
+-add_executable(${PROJECT_NAME} ${ALL_FILES})
++option(BUILD_AS_LIB "Build SoH as a static library for embedding (e.g. RL environments)" OFF)
++
++if(BUILD_AS_LIB)
++    add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
++    target_compile_definitions(${PROJECT_NAME} PUBLIC SOH_AS_LIB=1)
++else()
++    add_executable(${PROJECT_NAME} ${ALL_FILES})
++endif()
+ 
+ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+ use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
+@@ -597,8 +604,8 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
+     add_custom_command(
+     TARGET ${PROJECT_NAME}
+     POST_BUILD
+-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor ${CMAKE_BINARY_DIR}/soh/assets
+-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml ${CMAKE_BINARY_DIR}/soh/assets/xml
++    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor ${CMAKE_CURRENT_BINARY_DIR}/assets
++    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml ${CMAKE_CURRENT_BINARY_DIR}/assets/xml
+     )
+ endif()
+ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
+@@ -606,8 +613,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
+         TARGET ${PROJECT_NAME}
+         POST_BUILD
+         COMMENT "Copying asset xmls..."
+-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor $<TARGET_FILE_DIR:soh>/assets
+-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
++        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor $<TARGET_FILE_DIR:soh>/assets
++        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
+         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:soh>/assets/symbols
+     #    COMMAND ${VS_COPY_ASSETS_CMD}
+     )
+diff --git a/soh/src/code/main.c b/soh/src/code/main.c
+index c9d87c66c..5adab36f4 100644
+--- a/soh/src/code/main.c
++++ b/soh/src/code/main.c
+@@ -44,6 +44,7 @@ void Main_LogSystemHeap(void) {
+     osSyncPrintf(VT_RST);
+ }
+ 
++#ifndef SOH_AS_LIB
+ #ifdef _WIN32
+ int SDL_main(int argc, char* argv[]) {
+     AllocConsole();
+@@ -71,6 +72,7 @@ int main(int argc, char* argv[]) {
+     Heaps_Free();
+     return 0;
+ }
++#endif // !SOH_AS_LIB
+ 
+ void Main(void* arg) {
+     IrqMgrClient irqClient;
+-- 
+2.43.0
+
