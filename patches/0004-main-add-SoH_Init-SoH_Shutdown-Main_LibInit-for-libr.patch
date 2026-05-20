@@ -1,0 +1,114 @@
+From e315236d6479f2a01693146d0a19308b175047fd Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Wed, 20 May 2026 19:58:15 +0200
+Subject: [PATCH] main: add SoH_Init / SoH_Shutdown / Main_LibInit for library
+ mode
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When BUILD_AS_LIB=ON, expose SoH_Init(argc, argv) and SoH_Shutdown()
+as the external bootstrap/cleanup API. They wrap the same sequence as
+main() and Main(), but stop short of launching the frame loop —
+external code drives that via SoH_StepFrame.
+
+Main_LibInit duplicates the libultra-emulation setup from Main()
+(IrqMgr, Sched, AudioMgr, PadMgr) since extracting it from Main()
+itself would be more invasive. Keep in sync with Main() when
+upstream SoH changes.
+---
+ soh/src/code/main.c | 80 +++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
+
+diff --git a/soh/src/code/main.c b/soh/src/code/main.c
+index 5adab36f4..90becc23a 100644
+--- a/soh/src/code/main.c
++++ b/soh/src/code/main.c
+@@ -160,3 +160,83 @@ void Main(void* arg) {
+     func_800FBFD8();
+     osSyncPrintf("mainproc 実行終了\n"); // "End of execution"
+ }
++
++#ifdef SOH_AS_LIB
++
++static IrqMgrClient s_lib_irqClient;
++static OSMesgQueue s_lib_irqMgrMsgQ;
++static OSMesg s_lib_irqMgrMsgBuf[60];
++
++static void Main_LibInit(void) {
++    uintptr_t sysHeap;
++    uintptr_t fb;
++    void* debugHeap;
++    size_t debugHeapSize;
++
++    osSyncPrintf("SoH_Init: lib mode bootstrap\n");
++    gScreenWidth = SCREEN_WIDTH;
++    gScreenHeight = SCREEN_HEIGHT;
++    gAppNmiBufferPtr = (PreNmiBuff*)osAppNmiBuffer;
++    PreNmiBuff_Init(gAppNmiBufferPtr);
++    Fault_Init();
++    SysCfb_Init(0);
++    sysHeap = (uintptr_t)gSystemHeap;
++    fb = SysCfb_GetFbPtr(0);
++    gSystemHeapSize = 1024 * 1024 * 4;
++    SystemHeap_Init((void*)sysHeap, gSystemHeapSize);
++
++    if (osMemSize >= 0x800000) {
++        debugHeap = (void*)SysCfb_GetFbEnd();
++        debugHeapSize = (0x80600000 - (uintptr_t)debugHeap);
++    } else {
++        debugHeapSize = 0x400;
++        debugHeap = SYSTEM_ARENA_MALLOC_DEBUG(debugHeapSize);
++    }
++    debugHeapSize = 1024 * 64;
++    DebugArena_Init(debugHeap, debugHeapSize);
++    func_800636C0();
++    R_ENABLE_ARENA_DBG = 0;
++
++    osCreateMesgQueue(&sSiIntMsgQ, sSiIntMsgBuf, 1);
++    osSetEventMesg(5, &sSiIntMsgQ, OS_MESG_PTR(NULL));
++    Main_LogSystemHeap();
++
++    osCreateMesgQueue(&s_lib_irqMgrMsgQ, s_lib_irqMgrMsgBuf, 0x3C);
++    StackCheck_Init(&sIrqMgrStackInfo, sIrqMgrStack, sIrqMgrStack + sizeof(sIrqMgrStack), 0, 0x100, "irqmgr");
++    IrqMgr_Init(&gIrqMgr, &sGraphStackInfo, Z_PRIORITY_IRQMGR, 1);
++
++    StackCheck_Init(&sSchedStackInfo, sSchedStack, sSchedStack + sizeof(sSchedStack), 0, 0x100, "sched");
++    Sched_Init(&gSchedContext, &sAudioStack, Z_PRIORITY_SCHED, D_80013960, 1, &gIrqMgr);
++    IrqMgr_AddClient(&gIrqMgr, &s_lib_irqClient, &s_lib_irqMgrMsgQ);
++
++    StackCheck_Init(&sAudioStackInfo, sAudioStack, sAudioStack + sizeof(sAudioStack), 0, 0x100, "audio");
++    AudioMgr_Init(&gAudioMgr, sAudioStack + sizeof(sAudioStack), Z_PRIORITY_AUDIOMGR, 0xA, &gSchedContext, &gIrqMgr);
++
++    StackCheck_Init(&sPadMgrStackInfo, sPadMgrStack, sPadMgrStack + sizeof(sPadMgrStack), 0, 0x100, "padmgr");
++    PadMgr_Init(&gPadMgr, &sSiIntMsgQ, &gIrqMgr, 7, Z_PRIORITY_PADMGR, &sIrqMgrStack);
++    AudioMgr_Unlock(&gAudioMgr);
++
++    StackCheck_Init(&sGraphStackInfo, sGraphStack, sGraphStack + sizeof(sGraphStack), 0, 0x100, "graph");
++}
++
++static void Main_LibShutdown(void) {
++    osSyncPrintf("SoH_Shutdown: lib mode cleanup\n");
++    func_800FBFD8();
++}
++
++void SoH_Init(int argc, char** argv) {
++    GameConsole_Init();
++    InitOTR(argc, argv);
++    CrashHandlerRegisterCallback(CrashHandler_PrintSohData);
++    BootCommands_Init();
++    Heaps_Alloc();
++    Main_LibInit();
++}
++
++void SoH_Shutdown(void) {
++    Main_LibShutdown();
++    DeinitOTR();
++    Heaps_Free();
++}
++
++#endif /* SOH_AS_LIB */
+-- 
+2.43.0
+
