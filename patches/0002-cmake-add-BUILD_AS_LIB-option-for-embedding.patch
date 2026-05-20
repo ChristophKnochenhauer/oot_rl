@@ -1,24 +1,27 @@
-From 1ad65d7b1906fbe497d525484f1452383f2a834f Mon Sep 17 00:00:00 2001
+From b6d81796697d93f1292da8577547445784ceedeb Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
-Date: Wed, 20 May 2026 01:41:52 +0200
+Date: Wed, 20 May 2026 21:44:07 +0200
 Subject: [PATCH] cmake: add BUILD_AS_LIB option for embedding
 
 When BUILD_AS_LIB=ON, builds SoH as a static library instead of an
-executable. The OS entry-point (main/SDL_main in src/code/main.c) is
-guarded with SOH_AS_LIB so that consumers can provide their own.
+executable. Exposes soh/include as a PUBLIC include directory so
+external consumers can use #include <soh_lib.h> directly without
+configuring their own include paths.
 
-Game entry-point Main() and all globals remain available.
+The OS entry point (main/SDL_main in src/code/main.c) is guarded
+with SOH_AS_LIB so consumers can provide their own main(). Game
+entry point Main() and all globals remain available.
 ---
- soh/CMakeLists.txt  | 17 ++++++++++++-----
+ soh/CMakeLists.txt  | 12 +++++++++++-
  soh/src/code/main.c |  2 ++
- 2 files changed, 14 insertions(+), 5 deletions(-)
+ 2 files changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/soh/CMakeLists.txt b/soh/CMakeLists.txt
-index 31955ebf9..620491dc6 100644
+index d78340924..1d1d699b8 100644
 --- a/soh/CMakeLists.txt
 +++ b/soh/CMakeLists.txt
-@@ -223,7 +223,14 @@ set(ALL_FILES
+@@ -223,7 +223,17 @@ set(ALL_FILES
  ################################################################################
  # Target
  ################################################################################
@@ -28,36 +31,17 @@ index 31955ebf9..620491dc6 100644
 +if(BUILD_AS_LIB)
 +    add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
 +    target_compile_definitions(${PROJECT_NAME} PUBLIC SOH_AS_LIB=1)
++    target_include_directories(${PROJECT_NAME} PUBLIC
++        ${CMAKE_CURRENT_SOURCE_DIR}/include
++    )
 +else()
 +    add_executable(${PROJECT_NAME} ${ALL_FILES})
 +endif()
  
  if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
  use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
-@@ -597,8 +604,8 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
-     add_custom_command(
-     TARGET ${PROJECT_NAME}
-     POST_BUILD
--    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor ${CMAKE_BINARY_DIR}/soh/assets
--    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml ${CMAKE_BINARY_DIR}/soh/assets/xml
-+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor ${CMAKE_CURRENT_BINARY_DIR}/assets
-+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml ${CMAKE_CURRENT_BINARY_DIR}/assets/xml
-     )
- endif()
- if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
-@@ -606,8 +613,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
-         TARGET ${PROJECT_NAME}
-         POST_BUILD
-         COMMENT "Copying asset xmls..."
--        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor $<TARGET_FILE_DIR:soh>/assets
--        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
-+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor $<TARGET_FILE_DIR:soh>/assets
-+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
-         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:soh>/assets/symbols
-     #    COMMAND ${VS_COPY_ASSETS_CMD}
-     )
 diff --git a/soh/src/code/main.c b/soh/src/code/main.c
-index c9d87c66c..5adab36f4 100644
+index c9d87c66c..05f1d40e5 100644
 --- a/soh/src/code/main.c
 +++ b/soh/src/code/main.c
 @@ -44,6 +44,7 @@ void Main_LogSystemHeap(void) {
@@ -72,7 +56,7 @@ index c9d87c66c..5adab36f4 100644
      Heaps_Free();
      return 0;
  }
-+#endif // !SOH_AS_LIB
++#endif
  
  void Main(void* arg) {
      IrqMgrClient irqClient;

@@ -1,3 +1,7 @@
 build-cmake
+logs
+mods
 
 compile_commands.json
+imgui.ini
+shipofharkinian.json
