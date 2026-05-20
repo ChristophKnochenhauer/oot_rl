@@ -1,0 +1,45 @@
+From fc8086bbc82ca43ee30ecde132a6ee50d9e5da23 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Wed, 20 May 2026 20:32:46 +0200
+Subject: [PATCH] include: add public soh_lib.h header for library API
+
+Declares SoH_Init, SoH_StepFrame, SoH_Shutdown with C linkage so
+C++ consumers can use them via:
+
+    #include <soh_lib.h>
+    SoH_Init(argc, argv);
+    SoH_StepFrame();
+    SoH_Shutdown();
+---
+ soh/include/soh_lib.h | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+ create mode 100644 soh/include/soh_lib.h
+
+diff --git a/soh/include/soh_lib.h b/soh/include/soh_lib.h
+new file mode 100644
+index 000000000..21bd1afa9
+--- /dev/null
++++ b/soh/include/soh_lib.h
+@@ -0,0 +1,18 @@
++#ifndef SOH_LIB_H
++#define SOH_LIB_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++void SoH_Init(int argc, char** argv);
++
++void SoH_StepFrame(void);
++
++void SoH_Shutdown(void);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* SOH_LIB_H */
+-- 
+2.43.0
+
