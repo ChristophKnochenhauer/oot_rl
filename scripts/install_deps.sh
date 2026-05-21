@@ -14,6 +14,7 @@ sudo apt-get install -y \
     build-essential \
     gdb \
     ninja-build \
+    ccache \
     lsb-release \
     libsdl2-dev \
     libpng-dev \

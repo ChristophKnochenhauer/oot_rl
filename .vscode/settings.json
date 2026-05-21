@@ -2,9 +2,9 @@
     "cmake.generator": "Ninja",
     "cmake.buildDirectory": "${workspaceFolder}/build-cmake",
     "cmake.parallelJobs": 0,
-    "cmake.configureOnOpen": true,
+    "cmake.configureOnOpen": false,
+    "cmake.configureOnEdit": false,
     "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
     "cmake.defaultBuildTarget": "hello",
     "cmake.buildType": "Release"
-
 }
