@@ -1,7 +1,7 @@
 {
     "cmake.generator": "Ninja",
     "cmake.buildDirectory": "${workspaceFolder}/build-cmake",
-    "cmake.parallelJobs": 0,
+    "cmake.parallelJobs": 4,
     "cmake.configureOnOpen": false,
     "cmake.configureOnEdit": false,
     "cmake.copyCompileCommands": "${workspaceFolder}/compile_commands.json",
