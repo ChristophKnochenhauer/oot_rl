@@ -1,0 +1,58 @@
+From 32734e88ab148412ad98f8df0ba8b553ade4059d Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Fri, 22 May 2026 23:13:32 +0200
+Subject: [PATCH] gfx_sdl: allow subclassing for headless backend
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three changes to make the SDL2 backend subclassable:
+
+1. Remove 'final' from GfxWindowBackendSDL2
+2. Change 'private:' to 'protected:' so derived classes can
+   access member variables (mWnd, mCtx, etc.)
+3. Add #include <SDL.h> so the header is self-contained —
+   previously it relied on the includer pulling SDL in first,
+   which works for gfx_sdl2.cpp but breaks for subclasses.
+
+GfxWindowBackendEGL (next patch) inherits from SDL2 and overrides
+only the GL/window machinery, reusing frame timing, FPS, and
+input stubs from the parent.
+---
+ include/fast/backends/gfx_sdl.h | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+diff --git a/include/fast/backends/gfx_sdl.h b/include/fast/backends/gfx_sdl.h
+index 1f03cb63..d66a383d 100644
+--- a/include/fast/backends/gfx_sdl.h
++++ b/include/fast/backends/gfx_sdl.h
+@@ -1,8 +1,15 @@
+ #pragma once
+ 
+ #include "gfx_window_manager_api.h"
++
++#ifdef __APPLE__
++#include <SDL.h>
++#else
++#include <SDL2/SDL.h>
++#endif
++
+ namespace Fast {
+-class GfxWindowBackendSDL2 final : public GfxWindowBackend {
++class GfxWindowBackendSDL2 : public GfxWindowBackend {
+   public:
+     GfxWindowBackendSDL2() = default;
+     ~GfxWindowBackendSDL2() override;
+@@ -39,7 +46,7 @@ class GfxWindowBackendSDL2 final : public GfxWindowBackend {
+     void Destroy() override;
+     bool IsFullscreen() override;
+ 
+-  private:
++  protected:
+     void SetFullscreenImpl(bool on, bool call_callback);
+     void HandleSingleEvent(SDL_Event& event);
+     int TranslateScancode(int scancode) const;
+-- 
+2.43.0
+

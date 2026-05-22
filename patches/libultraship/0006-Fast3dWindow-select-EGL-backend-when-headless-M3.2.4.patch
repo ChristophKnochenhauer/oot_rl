@@ -1,0 +1,56 @@
+From ac50e8aa78bb933b7fdb639142ba1c3f67f57ef3 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Fri, 22 May 2026 23:33:43 +0200
+Subject: [PATCH] Fast3dWindow: select EGL backend when headless (M3.2.4)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+When Ship::Headless::IsEnabled() returns true and LUS_HAS_EGL is
+defined, InitWindowManager creates a GfxWindowBackendEGL instead
+of GfxWindowBackendSDL2. The rendering API stays OpenGL — only the
+window/context creation differs.
+
+Without LUS_HAS_EGL or with headless disabled, behaviour is
+unchanged from before this patch series.
+---
+ src/fast/Fast3dWindow.cpp | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/src/fast/Fast3dWindow.cpp b/src/fast/Fast3dWindow.cpp
+index da8adcfd..4ebb4b99 100644
+--- a/src/fast/Fast3dWindow.cpp
++++ b/src/fast/Fast3dWindow.cpp
+@@ -12,7 +12,10 @@
+ #include "fast/backends/gfx_direct3d_common.h"
+ #include "fast/backends/gfx_direct3d11.h"
+ #include "fast/backends/gfx_window_manager_api.h"
+-
++#include "ship/headless/Headless.h"
++#ifdef LUS_HAS_EGL
++#include "fast/backends/gfx_egl.h"
++#endif
+ #include <fstream>
+ 
+ namespace Fast {
+@@ -140,7 +143,16 @@ void Fast3dWindow::InitWindowManager() {
+ #ifdef ENABLE_OPENGL
+         case Ship::WindowBackend::FAST3D_SDL_OPENGL:
+             mRenderingApi = new GfxRenderingAPIOGL();
++#ifdef LUS_HAS_EGL
++            if (Ship::Headless::IsEnabled()) {
++                mWindowManagerApi = new GfxWindowBackendEGL();
++                SPDLOG_INFO("Using EGL window backend (headless mode)");
++            } else {
++                mWindowManagerApi = new GfxWindowBackendSDL2();
++            }
++#else
+             mWindowManagerApi = new GfxWindowBackendSDL2();
++#endif
+             break;
+ #endif
+ #ifdef __APPLE__
+-- 
+2.43.0
+
