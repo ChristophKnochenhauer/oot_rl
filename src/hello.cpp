@@ -1,21 +1,18 @@
 #include <iostream>
 #include <soh_lib.h>
 
+extern "C" int Ship_Headless_IsEnabled(void);
+
 int main(int argc, char** argv) {
-    std::cout << "=== SoH Library Test ===\n";
-    std::cout << "Initializing...\n";
+    std::cout << "Before SetHeadless: " << Ship_Headless_IsEnabled() << "\n";
+    SoH_SetHeadless(1);
+    std::cout << "After SetHeadless: " << Ship_Headless_IsEnabled() << "\n";
+    
     SoH_Init(argc, argv);
-    
-    std::cout << "Init complete. Running 5 frames...\n";
     for (int i = 0; i < 5; i++) {
-        std::cout << "  Frame " << i << " requested...\n" << std::flush;
         SoH_StepFrame();
-        std::cout << "  Frame " << i << " done\n";
+        std::cout << "Frame " << i << " done\n";
     }
-    
-    std::cout << "Shutting down...\n";
     SoH_Shutdown();
-    
-    std::cout << "=== Done ===\n";
     return 0;
 }

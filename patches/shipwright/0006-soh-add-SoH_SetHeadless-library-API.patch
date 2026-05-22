@@ -1,0 +1,60 @@
+From b2c526a2efa8cfe8e0fa6e74ef12cf30b565593a Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Fri, 22 May 2026 20:27:35 +0200
+Subject: [PATCH] soh: add SoH_SetHeadless library API
+
+Wires the SoH_SetHeadless(int) public API through to the libultraship
+runtime flag (Ship_Headless_SetEnabled).
+
+Must be called before SoH_Init. Default is disabled; existing
+behaviour preserved. Subsequent patches will read the flag at the
+appropriate points (audio init, window creation).
+---
+ soh/include/soh_lib.h | 3 +--
+ soh/src/code/main.c   | 6 ++++++
+ 2 files changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/soh/include/soh_lib.h b/soh/include/soh_lib.h
+index 21bd1afa9..573370386 100644
+--- a/soh/include/soh_lib.h
++++ b/soh/include/soh_lib.h
+@@ -6,10 +6,9 @@ extern "C" {
+ #endif
+ 
+ void SoH_Init(int argc, char** argv);
+-
+ void SoH_StepFrame(void);
+-
+ void SoH_Shutdown(void);
++void SoH_SetHeadless(int enabled);
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/soh/src/code/main.c b/soh/src/code/main.c
+index 0af6582db..c1a8249dc 100644
+--- a/soh/src/code/main.c
++++ b/soh/src/code/main.c
+@@ -12,6 +12,8 @@
+ #include <libultraship/bridge.h>
+ #include "soh/CrashHandlerExt.h"
+ 
++#include "ship/headless/Headless.h"
++
+ s32 gScreenWidth = SCREEN_WIDTH;
+ s32 gScreenHeight = SCREEN_HEIGHT;
+ size_t gSystemHeapSize = 0;
+@@ -224,6 +226,10 @@ static void Main_LibShutdown(void) {
+     func_800FBFD8();
+ }
+ 
++void SoH_SetHeadless(int enabled) {
++    Ship_Headless_SetEnabled(enabled);
++}
++
+ void SoH_Init(int argc, char** argv) {
+     GameConsole_Init();
+     InitOTR(argc, argv);
+-- 
+2.43.0
+
