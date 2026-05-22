@@ -1,0 +1,84 @@
+From 8a52fed487bf74d8999b01cf29e7fa616136f0a5 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Fri, 22 May 2026 20:57:45 +0200
+Subject: [PATCH] audio: skip SDL audio device when headless
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adds early-return guards to all five SDL audio entry points
+(DoInit, DoClose, DoPlay, Buffered, destructor) using the new
+Ship::Headless::IsEnabled() flag.
+
+In headless mode:
+- SDL_Init(SDL_INIT_AUDIO) is not called → no audio device opened
+- SDL_OpenAudioDevice is not called → no SDL audio thread spawned
+- Buffered() returns 0 → SoH's audio code thinks the buffer is empty
+- DoPlay is a no-op → samples are discarded silently
+
+SoH's internal audio computation (sequence playback, mixing) still
+runs — these guards only stop the SDL output side. Reducing the
+upstream compute is a separate concern (M3 stretch goal).
+---
+ src/ship/audio/SDLAudioPlayer.cpp | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/src/ship/audio/SDLAudioPlayer.cpp b/src/ship/audio/SDLAudioPlayer.cpp
+index d9f1e44d..d5a31b98 100644
+--- a/src/ship/audio/SDLAudioPlayer.cpp
++++ b/src/ship/audio/SDLAudioPlayer.cpp
+@@ -1,4 +1,5 @@
+ #include "ship/audio/SDLAudioPlayer.h"
++#include "ship/headless/Headless.h"
+ #include <spdlog/spdlog.h>
+ 
+ namespace Ship {
+@@ -6,10 +7,15 @@ namespace Ship {
+ SDLAudioPlayer::~SDLAudioPlayer() {
+     SPDLOG_TRACE("destruct SDL audio player");
+     DoClose();
+-    SDL_QuitSubSystem(SDL_INIT_AUDIO);
++    if (!Ship::Headless::IsEnabled()) {
++        SDL_QuitSubSystem(SDL_INIT_AUDIO);
++    }
+ }
+ 
+ void SDLAudioPlayer::DoClose() {
++    if (Ship::Headless::IsEnabled()) {
++        return;
++    }
+     if (mDevice != 0) {
+         // Pause playback first
+         SDL_PauseAudioDevice(mDevice, 1);
+@@ -21,6 +27,10 @@ void SDLAudioPlayer::DoClose() {
+ }
+ 
+ bool SDLAudioPlayer::DoInit() {
++    if (Ship::Headless::IsEnabled()) {
++        SPDLOG_INFO("SDL Audio init skipped (headless mode)");
++        return true;
++    }
+     if (SDL_Init(SDL_INIT_AUDIO) != 0) {
+         SPDLOG_ERROR("SDL init error: {}", SDL_GetError());
+         return false;
+@@ -50,10 +60,16 @@ bool SDLAudioPlayer::DoInit() {
+ }
+ 
+ int SDLAudioPlayer::Buffered() {
++    if (Ship::Headless::IsEnabled()) {
++        return 0;
++    }
+     return SDL_GetQueuedAudioSize(mDevice) / (sizeof(int16_t) * mNumChannels);
+ }
+ 
+ void SDLAudioPlayer::DoPlay(const uint8_t* buf, size_t len) {
++    if (Ship::Headless::IsEnabled()) {
++        return;
++    }
+     if (Buffered() < 6000) {
+         // Don't fill the audio buffer too much in case this happens
+         SDL_QueueAudio(mDevice, buf, len);
+-- 
+2.43.0
+
