@@ -28,4 +28,6 @@ sudo apt-get install -y \
     libspdlog-dev \
     libopengl-dev \
     libopusfile-dev \
-    libvorbis-dev
+    libvorbis-dev \
+    libegl-dev \
+    libgles-dev
