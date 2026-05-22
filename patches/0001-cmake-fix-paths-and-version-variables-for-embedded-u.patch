@@ -1,0 +1,118 @@
+From 52ea16c1251ed38208520261e2e7e5e82b8ea612 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Fri, 22 May 2026 11:41:27 +0200
+Subject: [PATCH] cmake: fix paths and version variables for embedded use
+
+When SoH is embedded via add_subdirectory(), CMAKE_SOURCE_DIR and
+CMAKE_PROJECT_VERSION_* refer to the parent project. This causes:
+- git operations to run in the parent repo (which may have no tags)
+- build.c.in to be filled with empty version constants
+
+Fixes:
+- CMAKE_SOURCE_DIR -> CMAKE_CURRENT_SOURCE_DIR in execute_process git
+  calls (CMakeLists.txt) and asset path copies (soh/CMakeLists.txt)
+- @CMAKE_PROJECT_VERSION_*@ -> @Ship_VERSION_*@ in build.c.in,
+  which is always set
+---
+ CMakeLists.txt          | 10 +++++-----
+ soh/CMakeLists.txt      |  8 ++++----
+ soh/src/boot/build.c.in |  8 ++++----
+ 3 files changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 4429cc599..e4b96855e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -43,7 +43,7 @@ set(PROJECT_TEAM "github.com/harbourmasters" CACHE STRING "" FORCE)
+ 
+ execute_process(
+     COMMAND git branch --show-current
+-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+     OUTPUT_VARIABLE GIT_BRANCH
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+ )
+@@ -52,7 +52,7 @@ set(CMAKE_PROJECT_GIT_BRANCH "${GIT_BRANCH}" CACHE STRING "Git branch" FORCE)
+ 
+ execute_process(
+     COMMAND git rev-parse HEAD
+-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+     OUTPUT_VARIABLE GIT_COMMIT_HASH
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+ )
+@@ -64,7 +64,7 @@ set(CMAKE_PROJECT_GIT_COMMIT_HASH "${SHORT_COMMIT_HASH}" CACHE STRING "Git commi
+ 
+ execute_process(
+     COMMAND git describe --tags --abbrev=0 --exact-match HEAD
+-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
++    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+     OUTPUT_VARIABLE GIT_COMMIT_TAG
+     OUTPUT_STRIP_TRAILING_WHITESPACE
+ )
+@@ -204,7 +204,7 @@ add_custom_target(
+     COMMAND ${CMAKE_COMMAND} -E rm -r -f ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom/shaders/
+     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/libultraship/src/fast/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom/shaders/
+ 
+-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OTRExporter/extract_assets.py -z "$<TARGET_FILE:ZAPD>" --non-interactive --xml-root assets/xml --custom-otr-file soh.o2r "--custom-assets-path" ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom --port-ver "${CMAKE_PROJECT_VERSION}"
++    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OTRExporter/extract_assets.py -z "$<TARGET_FILE:ZAPD>" --non-interactive --xml-root assets/xml --custom-otr-file soh.o2r "--custom-assets-path" ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom --port-ver "${Ship_VERSION}"
+     COMMAND ${CMAKE_COMMAND} -DSYSTEM_NAME=${CMAKE_SYSTEM_NAME} -DTARGET_DIR="$<TARGET_FILE_DIR:ZAPD>" -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DBINARY_DIR=${CMAKE_BINARY_DIR} -P ${CMAKE_CURRENT_SOURCE_DIR}/copy-existing-otrs.cmake
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/soh
+     COMMENT "Running asset extraction..."
+@@ -230,7 +230,7 @@ add_custom_target(
+     COMMAND ${CMAKE_COMMAND} -E rm -r -f ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom/shaders/
+     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/libultraship/src/fast/shaders/ ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom/shaders/
+ 
+-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OTRExporter/extract_assets.py -z "$<TARGET_FILE:ZAPD>" --norom --custom-otr-file soh.o2r "--custom-assets-path" ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom --port-ver "${CMAKE_PROJECT_VERSION}"
++    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/OTRExporter/extract_assets.py -z "$<TARGET_FILE:ZAPD>" --norom --custom-otr-file soh.o2r "--custom-assets-path" ${CMAKE_CURRENT_SOURCE_DIR}/soh/assets/custom --port-ver "${Ship_VERSION}"
+     COMMAND ${CMAKE_COMMAND} -DSYSTEM_NAME=${CMAKE_SYSTEM_NAME} -DTARGET_DIR="$<TARGET_FILE_DIR:ZAPD>" -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR} -DBINARY_DIR=${CMAKE_BINARY_DIR} -DONLYSOHOTR=On -P ${CMAKE_CURRENT_SOURCE_DIR}/copy-existing-otrs.cmake
+     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/soh
+     COMMENT "Generating soh.o2r..."
+diff --git a/soh/CMakeLists.txt b/soh/CMakeLists.txt
+index 31955ebf9..d78340924 100644
+--- a/soh/CMakeLists.txt
++++ b/soh/CMakeLists.txt
+@@ -597,8 +597,8 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
+     add_custom_command(
+     TARGET ${PROJECT_NAME}
+     POST_BUILD
+-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor ${CMAKE_BINARY_DIR}/soh/assets
+-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml ${CMAKE_BINARY_DIR}/soh/assets/xml
++    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor ${CMAKE_CURRENT_BINARY_DIR}/assets
++    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml ${CMAKE_CURRENT_BINARY_DIR}/assets/xml
+     )
+ endif()
+ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
+@@ -606,8 +606,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
+         TARGET ${PROJECT_NAME}
+         POST_BUILD
+         COMMENT "Copying asset xmls..."
+-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/extractor $<TARGET_FILE_DIR:soh>/assets
+-        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
++        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/extractor $<TARGET_FILE_DIR:soh>/assets
++        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/assets/xml $<TARGET_FILE_DIR:soh>/assets/xml
+         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:soh>/assets/symbols
+     #    COMMAND ${VS_COPY_ASSETS_CMD}
+     )
+diff --git a/soh/src/boot/build.c.in b/soh/src/boot/build.c.in
+index 4467d04c8..4f0e427f6 100644
+--- a/soh/src/boot/build.c.in
++++ b/soh/src/boot/build.c.in
+@@ -1,9 +1,9 @@
+ #include <libultraship/libultra.h>
+ 
+-const char gBuildVersion[] = "@PROJECT_BUILD_NAME@ (@CMAKE_PROJECT_VERSION_MAJOR@.@CMAKE_PROJECT_VERSION_MINOR@.@CMAKE_PROJECT_VERSION_PATCH@)";
+-const u16 gBuildVersionMajor = @CMAKE_PROJECT_VERSION_MAJOR@;
+-const u16 gBuildVersionMinor = @CMAKE_PROJECT_VERSION_MINOR@;
+-const u16 gBuildVersionPatch = @CMAKE_PROJECT_VERSION_PATCH@;
++const char gBuildVersion[] = "@PROJECT_BUILD_NAME@ (@Ship_VERSION_MAJOR@.@Ship_VERSION_MINOR@.@Ship_VERSION_PATCH@)";
++const u16 gBuildVersionMajor = @Ship_VERSION_MAJOR@;
++const u16 gBuildVersionMinor = @Ship_VERSION_MINOR@;
++const u16 gBuildVersionPatch = @Ship_VERSION_PATCH@;
+ 
+ const char gGitBranch[] = "@CMAKE_PROJECT_GIT_BRANCH@";
+ const char gGitCommitHash[] = "@CMAKE_PROJECT_GIT_COMMIT_HASH@";
+-- 
+2.43.0
+
