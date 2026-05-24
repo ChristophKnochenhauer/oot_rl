@@ -105,10 +105,9 @@ for sub_path in "${SUBMODULE_ORDER[@]}"; do
     sub_dir="$REPO_ROOT/$sub_path"
     if [[ -d "$sub_dir/.git" || -f "$sub_dir/.git" ]]; then
         mode=$(detect_mode "$sub_dir")
-        
         if [[ "$mode" == "dev" ]]; then
             cd "$sub_dir"
-            if [[ -n "$(git status --porcelain)" ]]; then
+            if [[ -n "$(git status --porcelain --ignore-submodules=all)" ]]; then
                 echo "ERROR: $sub_path is in dev mode with uncommitted changes." >&2
                 echo "Commit or stash them, then run start_dev.sh again." >&2
                 exit 1

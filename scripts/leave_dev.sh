@@ -5,9 +5,9 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BASELINE_TAG="oot-rl-baseline"
 DEV_BRANCH="oot-rl-dev"
 
-SUBMODULE_ORDER=(
-    "external/Shipwright/libultraship"
+SUBMODULE_LEAVE_ORDER=(
     "external/Shipwright"
+    "external/Shipwright/libultraship"
 )
 
 detect_mode() {
@@ -33,9 +33,9 @@ for sub_path in "${SUBMODULE_ORDER[@]}"; do
         mode=$(detect_mode "$sub_dir")
         if [[ "$mode" == "dev" ]]; then
             cd "$sub_dir"
-            if [[ -n "$(git status --porcelain)" ]]; then
+            if [[ -n "$(git status --porcelain --ignore-submodules=all)" ]]; then
                 echo "WARNING: $sub_path has uncommitted changes:"
-                git status --short | head -5 | sed 's/^/    /'
+                git status --short --ignore-submodules=all | head -5 | sed 's/^/    /'
                 has_uncommitted=true
             fi
         fi
@@ -69,9 +69,22 @@ leave_dev_for_submodule() {
     git branch -D "$DEV_BRANCH" >/dev/null 2>&1 || true
     git tag -d "$BASELINE_TAG" >/dev/null 2>&1 || true
     rm -f "$sub_dir/.patches_applied"
+
+    local parent_dir
+    parent_dir=$(dirname "$sub_dir")
+    local sub_basename
+    sub_basename=$(basename "$sub_dir")
+
+    cd "$parent_dir"
+    git submodule update --init --force "$sub_basename" >/dev/null 2>&1
+
+    cd "$sub_dir"
+    local pin
+    pin=$(git rev-parse HEAD)
+    echo "  reset to pin ${pin:0:7}"
 }
 
-for sub_path in "${SUBMODULE_ORDER[@]}"; do
+for sub_path in "${SUBMODULE_LEAVE_ORDER[@]}"; do
     leave_dev_for_submodule "$sub_path"
 done
 
