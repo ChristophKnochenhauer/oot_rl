@@ -1,5 +1,5 @@
 # oot_rl
-Reinforcement Learning Suite for The Legend of Zelda: Ocarina of Time.
+Reinforcement Learning Suite for The Legend of Zelda: Ocarina of Time based on the wonderful [Ship pf Harkinian](https://github.com/HarbourMasters/Shipwright) project.
 
 ## Build Instructions
 
