@@ -1,0 +1,80 @@
+From eeae5b382eaf91dbf1f74810329acdea2c5dc47b Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Mon, 25 May 2026 15:55:11 +0200
+Subject: [PATCH] EGL Displayless mode
+
+---
+ src/fast/backends/gfx_egl.cpp | 45 ++++++++++++++++++++++++++++-------
+ 1 file changed, 36 insertions(+), 9 deletions(-)
+
+diff --git a/src/fast/backends/gfx_egl.cpp b/src/fast/backends/gfx_egl.cpp
+index 9068eae4..25bd44e1 100644
+--- a/src/fast/backends/gfx_egl.cpp
++++ b/src/fast/backends/gfx_egl.cpp
+@@ -4,7 +4,9 @@
+ #include "ship/Context.h"
+ #include "ship/window/Window.h"
+ #include "ship/window/gui/Gui.h"
++
+ #include <spdlog/spdlog.h>
++#include <EGL/eglext.h>
+ 
+ namespace Fast {
+ 
+@@ -14,18 +16,43 @@ void GfxWindowBackendEGL::Init(const char* gameName, const char* gfxApiName,
+     mWindowWidth = width;
+     mWindowHeight = height;
+ 
++    EGLint major = 0, minor = 0;
+     mEglDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+-    if (mEglDisplay == EGL_NO_DISPLAY) {
+-        SPDLOG_ERROR("eglGetDisplay failed");
+-        return;
+-    }
++    if (mEglDisplay != EGL_NO_DISPLAY && eglInitialize(mEglDisplay, &major, &minor)) {
++        SPDLOG_INFO("EGL initialized: {}.{} (default display)", major, minor);
++    } else {
++        SPDLOG_INFO("Default EGL display unavailable, trying platform-device path");
++
++        auto eglQueryDevicesEXT = reinterpret_cast<PFNEGLQUERYDEVICESEXTPROC>(
++            eglGetProcAddress("eglQueryDevicesEXT"));
++        auto eglGetPlatformDisplayEXT = reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
++            eglGetProcAddress("eglGetPlatformDisplayEXT"));
++
++        if (!eglQueryDevicesEXT || !eglGetPlatformDisplayEXT) {
++            SPDLOG_ERROR("EGL device extensions not available");
++            return;
++        }
+ 
+-    EGLint major, minor;
+-    if (!eglInitialize(mEglDisplay, &major, &minor)) {
+-        SPDLOG_ERROR("eglInitialize failed");
+-        return;
++        EGLDeviceEXT devices[16];
++        EGLint numDevices = 0;
++        if (!eglQueryDevicesEXT(16, devices, &numDevices) || numDevices < 1) {
++            SPDLOG_ERROR("eglQueryDevicesEXT found no devices");
++            return;
++        }
++
++        mEglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, devices[0], nullptr);
++        if (mEglDisplay == EGL_NO_DISPLAY) {
++            SPDLOG_ERROR("eglGetPlatformDisplayEXT failed");
++            return;
++        }
++
++        if (!eglInitialize(mEglDisplay, &major, &minor)) {
++            SPDLOG_ERROR("eglInitialize on device display failed");
++            return;
++        }
++        SPDLOG_INFO("EGL initialized: {}.{} (device 0, {} devices total)",
++                    major, minor, numDevices);
+     }
+-    SPDLOG_INFO("EGL initialized: {}.{} (headless)", major, minor);
+ 
+     EGLint configAttribs[] = {
+         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+-- 
+2.43.0
+
