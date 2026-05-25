@@ -1,0 +1,157 @@
+From 8e98e33dd52b65e7b0b49bfdcce928c56d35f5ae Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Mon, 25 May 2026 13:44:58 +0200
+Subject: [PATCH] Skip ImGui rendering
+
+---
+ src/fast/backends/gfx_egl.cpp |  8 ++++++
+ src/ship/window/gui/Gui.cpp   | 53 ++++++++++++++++++++++++++---------
+ 2 files changed, 48 insertions(+), 13 deletions(-)
+
+diff --git a/src/fast/backends/gfx_egl.cpp b/src/fast/backends/gfx_egl.cpp
+index 1568345e..9068eae4 100644
+--- a/src/fast/backends/gfx_egl.cpp
++++ b/src/fast/backends/gfx_egl.cpp
+@@ -1,6 +1,9 @@
+ #ifdef LUS_HAS_EGL
+ 
+ #include "fast/backends/gfx_egl.h"
++#include "ship/Context.h"
++#include "ship/window/Window.h"
++#include "ship/window/gui/Gui.h"
+ #include <spdlog/spdlog.h>
+ 
+ namespace Fast {
+@@ -76,6 +79,11 @@ void GfxWindowBackendEGL::Init(const char* gameName, const char* gfxApiName,
+     }
+ 
+     SPDLOG_INFO("EGL backend initialised: {}x{} PBuffer", mWindowWidth, mWindowHeight);
++
++    Ship::GuiWindowInitData window_impl;
++    window_impl.Opengl.Window = nullptr;
++    window_impl.Opengl.Context = mEglContext;
++    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
+ }
+ 
+ void GfxWindowBackendEGL::SwapBuffersBegin() {
+diff --git a/src/ship/window/gui/Gui.cpp b/src/ship/window/gui/Gui.cpp
+index 426a965e..48a67b8b 100644
+--- a/src/ship/window/gui/Gui.cpp
++++ b/src/ship/window/gui/Gui.cpp
+@@ -49,6 +49,8 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
+ 
+ #endif
+ 
++#include "ship/headless/Headless.h"
++
+ namespace Ship {
+ #define TOGGLE_BTN ImGuiKey_F1
+ #define TOGGLE_PAD_BTN ImGuiKey_GamepadBack
+@@ -146,6 +148,10 @@ void Gui::Init(GuiWindowInitData windowImpl) {
+         std::make_shared<ResourceFactoryBinaryGuiTextureV0>(), RESOURCE_FORMAT_BINARY, "GuiTexture",
+         static_cast<uint32_t>(RESOURCE_TYPE_GUI_TEXTURE), 0);
+ 
++    if (Ship::Headless::IsEnabled()) {
++        mImGuiIo->DisplaySize = ImVec2(640.0f, 480.0f);
++    }
++
+     ImGuiWMInit();
+     mInterpreter = dynamic_pointer_cast<Fast::Fast3dWindow>(Context::GetInstance()->GetWindow())->GetInterpreterWeak();
+     ImGuiBackendInit();
+@@ -154,6 +160,9 @@ void Gui::Init(GuiWindowInitData windowImpl) {
+ }
+ 
+ void Gui::ImGuiWMInit() {
++    if (Ship::Headless::IsEnabled()) {
++        return;
++    }
+     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+         case WindowBackend::FAST3D_SDL_OPENGL:
+             SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
+@@ -182,30 +191,35 @@ void Gui::ImGuiWMInit() {
+ }
+ 
+ void Gui::ShutDownImGui(Ship::Window* window) {
+-    switch (window->GetWindowBackend()) {
++    if (!Ship::Headless::IsEnabled()) {
++        switch (window->GetWindowBackend()) {
+ #ifdef ENABLE_OPENGL
+-        case WindowBackend::FAST3D_SDL_OPENGL:
+-            ImGui_ImplSDL2_Shutdown();
+-            ImGui_ImplOpenGL3_Shutdown();
+-            break;
++            case WindowBackend::FAST3D_SDL_OPENGL:
++                ImGui_ImplSDL2_Shutdown();
++                ImGui_ImplOpenGL3_Shutdown();
++                break;
+ #endif
+ #if __APPLE__
+-        case WindowBackend::FAST3D_SDL_METAL:
+-            ImGui_ImplSDL2_Shutdown();
+-            ImGui_ImplMetal_Shutdown();
+-            break;
++            case WindowBackend::FAST3D_SDL_METAL:
++                ImGui_ImplSDL2_Shutdown();
++                ImGui_ImplMetal_Shutdown();
++                break;
+ #endif
+ #if defined(ENABLE_DX11) || defined(ENABLE_DX12)
+-        case WindowBackend::FAST3D_DXGI_DX11:
+-            ImGui_ImplWin32_Shutdown();
+-            ImGui_ImplDX11_Shutdown();
+-            break;
++            case WindowBackend::FAST3D_DXGI_DX11:
++                ImGui_ImplWin32_Shutdown();
++                ImGui_ImplDX11_Shutdown();
++                break;
+ #endif
++        }
+     }
+     ImGui::DestroyContext();
+ }
+ 
+ void Gui::ImGuiBackendInit() {
++    if (Ship::Headless::IsEnabled()) {
++        return;
++    }
+     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+ #ifdef ENABLE_OPENGL
+         case WindowBackend::FAST3D_SDL_OPENGL:
+@@ -336,6 +350,12 @@ ImGuiID Gui::GetMainGameWindowID() {
+ }
+ 
+ void Gui::ImGuiBackendNewFrame() {
++    if (Ship::Headless::IsEnabled()) {
++        if (!mImGuiIo->Fonts->IsBuilt()) {
++            mImGuiIo->Fonts->Build();
++        }
++        return;
++    }
+     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+ #ifdef ENABLE_OPENGL
+         case WindowBackend::FAST3D_SDL_OPENGL:
+@@ -364,6 +384,10 @@ void Gui::ImGuiBackendNewFrame() {
+ }
+ 
+ void Gui::ImGuiWMNewFrame() {
++    if (Ship::Headless::IsEnabled()) {
++        mImGuiIo->DeltaTime = 1.0f / 60.0f;
++        return;
++    }
+     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+         case WindowBackend::FAST3D_SDL_OPENGL:
+         case WindowBackend::FAST3D_SDL_METAL:
+@@ -805,6 +829,9 @@ ImVec2 Gui::GetTextureSize(const std::string& name) {
+ }
+ 
+ void Gui::ImGuiRenderDrawData(ImDrawData* data) {
++    if (Ship::Headless::IsEnabled()) {
++        return;
++    }
+     switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
+ 
+ #ifdef ENABLE_OPENGL
+-- 
+2.43.0
+
