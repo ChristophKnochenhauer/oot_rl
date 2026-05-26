@@ -30,4 +30,5 @@ sudo apt-get install -y \
     libopusfile-dev \
     libvorbis-dev \
     libegl-dev \
-    libgles-dev
+    libgles-dev \
+    mesa-utils
