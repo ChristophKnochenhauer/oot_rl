@@ -5,6 +5,7 @@
 int main(int argc, char** argv) {
     SoH_SetHeadless(1);
     SoH_Init(argc, argv);
+    SoH_EnableDebugView(640, 480);
     spdlog::set_level(spdlog::level::info);
 
     SoH_GameState state;
@@ -33,6 +34,7 @@ int main(int argc, char** argv) {
         }
     }
 
+    SoH_DisableDebugView();
     SoH_Shutdown();
     return 0;
 }

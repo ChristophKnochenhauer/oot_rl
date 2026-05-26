@@ -1,0 +1,55 @@
+From c6c2b7eda447fb5e513a99d32bd8cf859db6daf2 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Tue, 26 May 2026 21:39:15 +0200
+Subject: [PATCH] Debug view
+
+---
+ soh/include/soh_lib.h | 3 +++
+ soh/src/code/main.c   | 9 +++++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/soh/include/soh_lib.h b/soh/include/soh_lib.h
+index 3195e4ab6..119b4fc46 100644
+--- a/soh/include/soh_lib.h
++++ b/soh/include/soh_lib.h
+@@ -45,6 +45,9 @@ typedef struct {
+ 
+ int SoH_GetGameState(SoH_GameState* out);
+ 
++void SoH_EnableDebugView(uint32_t width, uint32_t height);
++void SoH_DisableDebugView(void);
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/soh/src/code/main.c b/soh/src/code/main.c
+index 676171b25..a1c21f652 100644
+--- a/soh/src/code/main.c
++++ b/soh/src/code/main.c
+@@ -14,6 +14,7 @@
+ 
+ #include "soh_lib.h"
+ #include "ship/headless/Headless.h"
++#include "ship/headless/DebugView.h"
+ #include "macros.h"
+ 
+ s32 gScreenWidth = SCREEN_WIDTH;
+@@ -288,6 +289,14 @@ int SoH_GetGameState(SoH_GameState* out) {
+     return 1;
+ }
+ 
++void SoH_EnableDebugView(uint32_t width, uint32_t height) {
++    Ship_Headless_EnableDebugView(width, height);
++}
++
++void SoH_DisableDebugView(void) {
++    Ship_Headless_DisableDebugView();
++}
++
+ void SoH_Init(int argc, char** argv) {
+     GameConsole_Init();
+     InitOTR(argc, argv);
+-- 
+2.43.0
+

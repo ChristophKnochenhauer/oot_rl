@@ -1,0 +1,282 @@
+From 5d45df5b2c9ac94fad46eb87a2c35d2c9a106e2a Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Tue, 26 May 2026 21:38:56 +0200
+Subject: [PATCH] Debug view
+
+---
+ include/fast/Fast3dWindow.h       |   2 +
+ include/ship/headless/DebugView.h |  46 +++++++++
+ src/fast/Fast3dWindow.cpp         |  14 +++
+ src/ship/headless/DebugView.cpp   | 154 ++++++++++++++++++++++++++++++
+ 4 files changed, 216 insertions(+)
+ create mode 100644 include/ship/headless/DebugView.h
+ create mode 100644 src/ship/headless/DebugView.cpp
+
+diff --git a/include/fast/Fast3dWindow.h b/include/fast/Fast3dWindow.h
+index 38ed53b8..5341564e 100644
+--- a/include/fast/Fast3dWindow.h
++++ b/include/fast/Fast3dWindow.h
+@@ -45,6 +45,8 @@ class Fast3dWindow : public Ship::Window {
+     bool IsFullscreen() override;
+     bool IsRunning() override;
+     uintptr_t GetGfxFrameBuffer() override;
++    uintptr_t GetGameFramebufferTexture() const;
++    bool IsRenderingToFramebuffer() const;
+     const char* GetKeyName(int32_t scancode) override;
+ 
+     void InitWindowManager();
+diff --git a/include/ship/headless/DebugView.h b/include/ship/headless/DebugView.h
+new file mode 100644
+index 00000000..10d24335
+--- /dev/null
++++ b/include/ship/headless/DebugView.h
+@@ -0,0 +1,46 @@
++#pragma once
++
++#include <stdint.h>
++
++#ifdef __cplusplus
++namespace Ship::Headless {
++
++class DebugView {
++  public:
++    static DebugView* GetInstance();
++
++    void Enable(uint32_t width, uint32_t height);
++    void Disable();
++    bool IsEnabled() const { return mEnabled; }
++
++    void CaptureFrame();
++
++  private:
++    DebugView() = default;
++    ~DebugView();
++
++    bool mEnabled = false;
++    uint32_t mWidth = 0;
++    uint32_t mHeight = 0;
++
++    void* mWindow = nullptr;
++    void* mRenderer = nullptr;
++    void* mTexture = nullptr;
++
++    uint8_t* mPixels = nullptr;
++};
++
++}  // namespace Ship::Headless
++#endif  // __cplusplus
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++void Ship_Headless_EnableDebugView(uint32_t width, uint32_t height);
++void Ship_Headless_DisableDebugView(void);
++int  Ship_Headless_IsDebugViewEnabled(void);
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/src/fast/Fast3dWindow.cpp b/src/fast/Fast3dWindow.cpp
+index 4ebb4b99..6fa7cf63 100644
+--- a/src/fast/Fast3dWindow.cpp
++++ b/src/fast/Fast3dWindow.cpp
+@@ -18,6 +18,8 @@
+ #endif
+ #include <fstream>
+ 
++#include "ship/headless/DebugView.h"
++
+ namespace Fast {
+ 
+ extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
+@@ -216,6 +218,9 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
+     mInterpreter->StartFrame();
+     // Execute the games gfx commands
+     mInterpreter->Run(commands, mtxReplacements);
++
++    Ship::Headless::DebugView::GetInstance()->CaptureFrame();
++
+     // Renders the game frame buffer to the final window and finishes the GUI
+     gui->EndDraw();
+     // Finalize swap buffers
+@@ -346,6 +351,15 @@ uintptr_t Fast3dWindow::GetGfxFrameBuffer() {
+     return mInterpreter->mGfxFrameBuffer;
+ }
+ 
++uintptr_t Fast3dWindow::GetGameFramebufferTexture() const {
++    if (!mInterpreter->mRendersToFb) return 0;
++    return (uintptr_t)mInterpreter->mRapi->GetFramebufferTextureId(mInterpreter->mGameFb);
++}
++
++bool Fast3dWindow::IsRenderingToFramebuffer() const {
++    return mInterpreter->mRendersToFb;
++}
++
+ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
+     return mWindowManagerApi->GetKeyName(scancode);
+ }
+diff --git a/src/ship/headless/DebugView.cpp b/src/ship/headless/DebugView.cpp
+new file mode 100644
+index 00000000..a9ed5607
+--- /dev/null
++++ b/src/ship/headless/DebugView.cpp
+@@ -0,0 +1,154 @@
++#include "ship/headless/DebugView.h"
++
++#include <SDL2/SDL.h>
++#include <spdlog/spdlog.h>
++
++#ifdef LUS_HAS_EGL
++#include <EGL/egl.h>
++#include <GL/gl.h>
++
++#include "fast/Fast3dWindow.h"
++#include "ship/Context.h"
++#include "ship/window/Window.h"
++#endif
++
++namespace Ship::Headless {
++
++DebugView* DebugView::GetInstance() {
++    static DebugView instance;
++    return &instance;
++}
++
++DebugView::~DebugView() {
++    Disable();
++}
++
++void DebugView::Enable(uint32_t width, uint32_t height) {
++    if (mEnabled && width == mWidth && height == mHeight) {
++        return;
++    }
++    if (mEnabled) {
++        Disable();
++    }
++
++    if (SDL_InitSubSystem(SDL_INIT_VIDEO) != 0) {
++        SPDLOG_ERROR("[DebugView] SDL_InitSubSystem(VIDEO) failed: {}", SDL_GetError());
++        return;
++    }
++
++    auto* window = SDL_CreateWindow("SoH Debug View",
++                                    100, 100,
++                                    width, height,
++                                    SDL_WINDOW_SHOWN);
++    
++    if (!window) {
++        SPDLOG_ERROR("[DebugView] SDL_CreateWindow failed: {}", SDL_GetError());
++        return;
++    }
++
++    auto* renderer = SDL_CreateRenderer(static_cast<SDL_Window*>(window),
++                                        -1, SDL_RENDERER_SOFTWARE);
++    if (!renderer) {
++        SPDLOG_ERROR("[DebugView] SDL_CreateRenderer failed: {}", SDL_GetError());
++        SDL_DestroyWindow(static_cast<SDL_Window*>(window));
++        return;
++    }
++
++    auto* texture = SDL_CreateTexture(static_cast<SDL_Renderer*>(renderer),
++                                      SDL_PIXELFORMAT_ABGR8888,
++                                      SDL_TEXTUREACCESS_STREAMING,
++                                      width, height);
++    if (!texture) {
++        SPDLOG_ERROR("[DebugView] SDL_CreateTexture failed: {}", SDL_GetError());
++        SDL_DestroyRenderer(static_cast<SDL_Renderer*>(renderer));
++        SDL_DestroyWindow(static_cast<SDL_Window*>(window));
++        return;
++    }
++
++    mWindow = window;
++    mRenderer = renderer;
++    mTexture = texture;
++    mWidth = width;
++    mHeight = height;
++    mPixels = new uint8_t[width * height * 4];
++    mEnabled = true;
++
++    SPDLOG_INFO("[DebugView] Enabled ({}x{})", width, height);
++}
++
++void DebugView::Disable() {
++    if (!mEnabled) return;
++
++    if (SDL_WasInit(SDL_INIT_VIDEO) & SDL_INIT_VIDEO) {
++        if (mTexture)  SDL_DestroyTexture(static_cast<SDL_Texture*>(mTexture));
++        if (mRenderer) SDL_DestroyRenderer(static_cast<SDL_Renderer*>(mRenderer));
++        if (mWindow)   SDL_DestroyWindow(static_cast<SDL_Window*>(mWindow));
++    }
++
++    delete[] mPixels;
++
++    mTexture = mRenderer = mWindow = nullptr;
++    mPixels = nullptr;
++    mEnabled = false;
++    SPDLOG_INFO("[DebugView] Disabled");
++}
++
++void DebugView::CaptureFrame() {
++    if (!mEnabled) return;
++
++#ifdef LUS_HAS_EGL
++    auto context = Ship::Context::GetInstance();
++    if (!context) return;
++    auto window = context->GetWindow();
++    if (!window) return;
++
++    auto fast3d = std::dynamic_pointer_cast<Fast::Fast3dWindow>(window);
++    if (!fast3d) return;
++
++    if (fast3d->IsRenderingToFramebuffer()) {
++        GLuint tex = static_cast<GLuint>(fast3d->GetGameFramebufferTexture());
++        if (!tex) return;
++        glBindTexture(GL_TEXTURE_2D, tex);
++        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, mPixels);
++        glBindTexture(GL_TEXTURE_2D, 0);
++    } else {
++        glReadBuffer(GL_BACK);
++        glReadPixels(0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, mPixels);
++    }
++
++    const uint32_t row_bytes = mWidth * 4;
++    for (uint32_t y = 0; y < mHeight / 2; y++) {
++        uint8_t* top = mPixels + y * row_bytes;
++        uint8_t* bot = mPixels + (mHeight - 1 - y) * row_bytes;
++        for (uint32_t b = 0; b < row_bytes; b++) {
++            std::swap(top[b], bot[b]);
++        }
++    }
++
++    SDL_UpdateTexture(static_cast<SDL_Texture*>(mTexture), nullptr, mPixels, row_bytes);
++    SDL_RenderClear(static_cast<SDL_Renderer*>(mRenderer));
++    SDL_RenderCopy(static_cast<SDL_Renderer*>(mRenderer),
++                   static_cast<SDL_Texture*>(mTexture), nullptr, nullptr);
++    SDL_RenderPresent(static_cast<SDL_Renderer*>(mRenderer));
++
++    SDL_PumpEvents();
++#endif
++}
++
++}  // namespace Ship::Headless
++
++extern "C" {
++
++void Ship_Headless_EnableDebugView(uint32_t width, uint32_t height) {
++    Ship::Headless::DebugView::GetInstance()->Enable(width, height);
++}
++
++void Ship_Headless_DisableDebugView(void) {
++    Ship::Headless::DebugView::GetInstance()->Disable();
++}
++
++int Ship_Headless_IsDebugViewEnabled(void) {
++    return Ship::Headless::DebugView::GetInstance()->IsEnabled() ? 1 : 0;
++}
++
++}
+-- 
+2.43.0
+
