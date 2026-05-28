@@ -1,7 +1,6 @@
 build-cmake
 logs
 mods
-Save
 
 compile_commands.json
 imgui.ini
