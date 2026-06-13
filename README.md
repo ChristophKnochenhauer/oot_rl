@@ -96,10 +96,6 @@ gs = soh.get_game_state()        # pos, scene_id, health, ...
 frame = soh.get_frame()          # (480, 640, 3) uint8 RGB
 ```
 
-See `HANDOVER.md` §5 for the full native-module API. (The native
-`SoH_BootToGameplay()` helper exists in the C API but is not yet exposed through
-the Python module.)
-
 ## Development Mode (editing SoH)
 
 SoH and libultraship live as git submodules under `external/`. **Do not commit
@@ -147,4 +143,3 @@ git add patches/ && git commit
 When bumping a submodule to a newer upstream, re-apply the patches one by one in
 dev mode and resolve conflicts. Only the upstream-file patches can conflict — our
 own code lives in `overlay/` and stays out of the conflict path entirely.
-Details: `HANDOVER.md` §9.
