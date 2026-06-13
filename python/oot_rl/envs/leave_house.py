@@ -57,7 +57,7 @@ class LeaveHouseEnv(gym.Env):
         soh.step_frame()
 
         gs = soh.get_game_state()
-        self._initial_scene = int(gs.scene)
+        self._initial_scene = int(gs.scene_id)
         self._steps = 0
 
         obs = soh.get_frame()
@@ -76,7 +76,7 @@ class LeaveHouseEnv(gym.Env):
         reward = -dist / self.distance_scale
 
         self._steps += 1
-        terminated = bool(gs.valid) and int(gs.scene) != self._initial_scene
+        terminated = bool(gs.valid) and int(gs.scene_id) != self._initial_scene
         truncated  = (self._steps >= self.max_steps) and not terminated
 
         if terminated:
@@ -93,9 +93,9 @@ class LeaveHouseEnv(gym.Env):
 
     def _info(self, gs, *, action_name: str, dist: float | None = None) -> dict:
         info = {
-            "scene": int(gs.scene),
+            "scene": int(gs.scene_id),
             "pos":   (float(gs.pos_x), float(gs.pos_y), float(gs.pos_z)),
-            "hp":    (int(gs.hp), int(gs.max_hp)),
+            "hp":    (int(gs.health), int(gs.max_health)),
             "action": action_name,
         }
         if dist is not None:
