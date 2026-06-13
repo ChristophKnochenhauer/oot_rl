@@ -258,15 +258,29 @@ während sie auf der Demo operieren.
       Inspector. Braucht Modus-Toggle: Authoring = ImGui an (Patch `0006` schaltet
       es im Headless-Pfad ab), Training = ImGui aus.
 
-### M8 — Erstes Training
+### M8 — Erstes Training (Prototyping, NICHT optimales Lernen)
 
-- [ ] PPO oder DQN drumherum bauen. Optionen: **CleanRL** (single-file,
-      transparent) oder **Stable-Baselines3** (battery-included). User-Präferenz
-      steht aus.
-- [ ] Frame-Stack / Resize / Grayscale via `gymnasium.wrappers`
-- [ ] Erstes Training auf "Verlasse Link's Haus" — sollte in Minuten lernbar sein
-- [ ] Folge-Tasks: Kokiri Forest → Mido (komplexere Navigation, NPC-Dialog
-      Vermeidung)
+> Ziel: die Pipeline end-to-end zum Laufen bringen, nicht optimal lernen. Reward
+> bleibt bewusst **sparse** (gelegentliche Exits reichen zum Testen — kommen vor).
+> Das Env bleibt **algorithmus-agnostisch** (`gym.Env`); eigene RL-Algos kommen
+> später, SB3 ist nur Prototyping-Harness.
+
+- [ ] Observation-Wrapper via `gymnasium.wrappers`: `ResizeObservation` 84×84,
+      (optional `GrayscaleObservation` — OoT hat Farb-Cues, abwägen), `FrameStackObservation` 4.
+- [ ] **SB3 PPO** als Prototyping-Harness (`CnnPolicy`), TensorBoard-Logging,
+      Checkpoints. Bewusst dünn/austauschbar — das Env-Interface bleibt framework-neutral.
+- [ ] Durchsatz messen: single-process Steps/s (Baseline für den M9-Speedup).
+- [ ] Eval + MP4 der trainierten Policy (record-Infra aus `test_warp.py` wiederverwenden).
+
+> **Architektur-Entscheidung (2026-06-13):** RL-Loop bleibt Python/`gym.Env`, NICHT
+> nach C++ portieren. Der Singleton-Constraint (SoH process-global) verbietet
+> in-process-Vektorisierung → Parallelität ist so oder so multi-process (M9), der
+> C++-Haupt­vorteil entfällt. Heiße Pfade sind schon nativ (Engine, Frame-Readback,
+> GPU). Einziger lohnender C++-Schritt mittelfristig: Preprocessing auf die C++-Seite
+> ziehen, um die M9-IPC-Payload ~100× zu verkleinern (→ M9).
+
+> **Zurückgestellt:** Reward-Shaping/Tür-Koordinate (dichteres Signal), und die
+> Folge-Tasks Kokiri Forest → Mido (komplexe Navigation, NPC-Dialog-Vermeidung).
 
 ### M9 — Parallelisierung
 
