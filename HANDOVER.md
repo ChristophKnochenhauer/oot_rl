@@ -214,14 +214,20 @@ während sie auf der Demo operieren.
 > Milestone (siehe unten). Hier nur so viel Determinismus wie nötig, um Envs zum
 > Laufen zu bringen.
 
-- [ ] Steuerbares Gameplay per **Warp** betreten statt auf Attract-Demo zu hoffen:
-      `SoH_WarpTo(entranceId, roomNum, x, y, z, rotY)` (dünner Forward auf
-      `Warp()`/`WarpPoint` aus `Enhancements/Warping.cpp`) in `soh_api.c` + pybind.
-      Evtl. `WarpPoint.bootToPoint` nutzen → umgeht die Demo-Frage ganz.
-- [ ] `save_state(0)` als groben Reset-Anker nach dem Warp (RNG/Kamera noch nicht
-      garantiert deterministisch — bewusst akzeptiert in dieser Phase).
-- [ ] `LeaveHouseEnv` auf diesem Warp-Anker smoke-testen (zufällige Policy)
-- [ ] `LeaveHouseEnv.reset` mit Dialog-Recovery (B+START für Menü-Aussteuerung)
+- [x] Steuerbares Gameplay per **Warp** betreten statt auf Attract-Demo zu hoffen:
+      `soh.warp_to_entrance(entrance_id, link_age)` (+ `warp_to` für exakte pos),
+      Overlay `SoH_Warp.cpp` → `Warp()`/`WarpPoint`. Vom Titlescreen aus aufrufen
+      (gPlayState==NULL → Warp()s sauberer Branch). Verifiziert: Kind-Link in
+      Link's Haus (entrance 0xBB → scene 52), steuerbar.
+- [x] `save_state(0)` als groben Reset-Anker nach dem Warp (RNG/Kamera noch nicht
+      garantiert deterministisch — bewusst akzeptiert). Reset stellt exakt wieder her.
+- [x] `LeaveHouseEnv` (`python/oot_rl_gym/`) auf diesem Warp-Anker smoke-getestet
+      (`python/test_gym.py`, zufällige Policy): konstruiert, ankert deterministisch,
+      steppt, resettet. Erfolg = Szenenwechsel (Haus→Kokiri). Eigenes Package, weil
+      `oot_rl` (das .so) sonst den Import schattet.
+- [ ] `LeaveHouseEnv.reset` mit Dialog-Recovery (B+START) — in Scene 52 (keine NPCs)
+      noch nicht nötig; relevant ab NPC-Szenen.
+- [ ] Inventar/Alter/exakte Tür-Position sauber festlegen → Authoring-Milestone.
 
 ### Mx — Sauberes, deterministisches Env-Authoring (Scenario-System) — SPÄTER
 
