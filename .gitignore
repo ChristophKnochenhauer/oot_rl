@@ -1,7 +1,9 @@
+.claude
 build-cmake
 logs
 mods
 
 compile_commands.json
 imgui.ini
+HANDOVER.md
 shipofharkinian.json
