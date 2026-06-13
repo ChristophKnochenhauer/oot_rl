@@ -1,8 +1,8 @@
-From 2f3909e12ff91f951ac354d35d09550340fb4b24 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Fri, 22 May 2026 22:43:37 +0200
-Subject: [PATCH] build: add EGL dependency for headless rendering
+Subject: [PATCH 03/11] build: add EGL dependency for headless rendering
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -22,26 +22,9 @@ If EGL is not installed, the build still succeeds — headless
 rendering is just unavailable. Install libegl-dev + libgles-dev
 on Debian/Ubuntu to enable it.
 ---
- cmake/dependencies/linux-oot-rl.cmake | 9 +++++++++
- src/CMakeLists.txt                    | 4 ++++
- 2 files changed, 13 insertions(+)
- create mode 100644 cmake/dependencies/linux-oot-rl.cmake
+ src/CMakeLists.txt | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/cmake/dependencies/linux-oot-rl.cmake b/cmake/dependencies/linux-oot-rl.cmake
-new file mode 100644
-index 00000000..53f9dcdd
---- /dev/null
-+++ b/cmake/dependencies/linux-oot-rl.cmake
-@@ -0,0 +1,9 @@
-+#=================== EGL (for headless rendering) ===================
-+find_package(OpenGL COMPONENTS EGL)
-+if (TARGET OpenGL::EGL)
-+    target_link_libraries(libultraship PUBLIC OpenGL::EGL)
-+    target_compile_definitions(libultraship PUBLIC LUS_HAS_EGL=1)
-+    message(STATUS "EGL found — headless rendering enabled")
-+else()
-+    message(STATUS "EGL not found — headless rendering will not be available")
-+endif()
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
 index f6dbc948..845ee795 100644
 --- a/src/CMakeLists.txt
@@ -57,6 +40,3 @@ index f6dbc948..845ee795 100644
  #=================== Compile Options & Defs ===================
  
  target_compile_definitions(libultraship PRIVATE ${GBI_UCODE})
--- 
-2.43.0
-

@@ -120,12 +120,18 @@ for sub_path in "${SUBMODULE_ORDER[@]}"; do
     enter_dev_for_submodule "$sub_path" "${SUBMODULES[$sub_path]}"
 done
 
+# Link our own files from overlay/ into the submodules so dev-mode builds see
+# them. They stay untracked/excluded — dev mode is only for editing upstream
+# files; to change our own files, edit overlay/ directly (no dev mode needed).
+"$REPO_ROOT/scripts/link_overlay.sh"
+
 echo ""
 echo "Dev mode active."
 echo ""
-echo "  edit:    \$EDITOR external/Shipwright/..."
-echo "  commit:  cd external/Shipwright/...; git add ...; git commit"
-echo "  build:   cmake --build build-cmake --target hello"
-echo "  export:  ./scripts/export_patches.sh"
-echo "  leave:   ./scripts/leave_dev.sh"
+echo "  edit upstream:  \$EDITOR external/Shipwright/..."
+echo "  edit our code:  \$EDITOR overlay/...        (no dev mode needed)"
+echo "  commit:         cd external/Shipwright/...; git add ...; git commit"
+echo "  build:          cmake --build build-cmake --target smoke_test"
+echo "  export:         ./scripts/export_patches.sh"
+echo "  leave:          ./scripts/leave_dev.sh"
 echo ""

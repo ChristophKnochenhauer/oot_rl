@@ -1,14 +1,13 @@
-From 20423203eb987ef1545f2e9b3eb7bf28ef101858 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Thu, 28 May 2026 07:44:48 +0200
-Subject: [PATCH] Fix debug window not rendering game
+Subject: [PATCH 09/11] Fix debug window not rendering game
 
 ---
  src/fast/backends/gfx_opengl.cpp |  7 ++++---
  src/fast/interpreter.cpp         | 17 ++++++++++-------
- src/ship/headless/DebugView.cpp  | 16 ++++++++++------
- 3 files changed, 24 insertions(+), 16 deletions(-)
+ 2 files changed, 14 insertions(+), 10 deletions(-)
 
 diff --git a/src/fast/backends/gfx_opengl.cpp b/src/fast/backends/gfx_opengl.cpp
 index c0746d30..b915ab03 100644
@@ -70,42 +69,3 @@ index 73a29336..ffe54fbd 100644
          }
      } else {
          mRendersToFb = false;
-diff --git a/src/ship/headless/DebugView.cpp b/src/ship/headless/DebugView.cpp
-index a9ed5607..193d0ab6 100644
---- a/src/ship/headless/DebugView.cpp
-+++ b/src/ship/headless/DebugView.cpp
-@@ -105,6 +105,8 @@ void DebugView::CaptureFrame() {
-     auto fast3d = std::dynamic_pointer_cast<Fast::Fast3dWindow>(window);
-     if (!fast3d) return;
- 
-+    const uint32_t row_bytes = mWidth * 4;
-+    bool needsFlip = false;
-     if (fast3d->IsRenderingToFramebuffer()) {
-         GLuint tex = static_cast<GLuint>(fast3d->GetGameFramebufferTexture());
-         if (!tex) return;
-@@ -114,14 +116,16 @@ void DebugView::CaptureFrame() {
-     } else {
-         glReadBuffer(GL_BACK);
-         glReadPixels(0, 0, mWidth, mHeight, GL_RGBA, GL_UNSIGNED_BYTE, mPixels);
-+        needsFlip = true;
-     }
- 
--    const uint32_t row_bytes = mWidth * 4;
--    for (uint32_t y = 0; y < mHeight / 2; y++) {
--        uint8_t* top = mPixels + y * row_bytes;
--        uint8_t* bot = mPixels + (mHeight - 1 - y) * row_bytes;
--        for (uint32_t b = 0; b < row_bytes; b++) {
--            std::swap(top[b], bot[b]);
-+    if (needsFlip) {
-+        for (uint32_t y = 0; y < mHeight / 2; y++) {
-+            uint8_t* top = mPixels + y * row_bytes;
-+            uint8_t* bot = mPixels + (mHeight - 1 - y) * row_bytes;
-+            for (uint32_t b = 0; b < row_bytes; b++) {
-+                std::swap(top[b], bot[b]);
-+            }
-         }
-     }
- 
--- 
-2.43.0
-

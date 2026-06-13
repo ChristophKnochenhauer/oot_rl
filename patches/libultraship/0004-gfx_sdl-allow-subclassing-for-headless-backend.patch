@@ -1,8 +1,8 @@
-From 32734e88ab148412ad98f8df0ba8b553ade4059d Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Fri, 22 May 2026 23:13:32 +0200
-Subject: [PATCH] gfx_sdl: allow subclassing for headless backend
+Subject: [PATCH 04/11] gfx_sdl: allow subclassing for headless backend
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -53,6 +53,3 @@ index 1f03cb63..d66a383d 100644
      void SetFullscreenImpl(bool on, bool call_callback);
      void HandleSingleEvent(SDL_Event& event);
      int TranslateScancode(int scancode) const;
--- 
-2.43.0
-

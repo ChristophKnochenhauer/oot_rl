@@ -1,8 +1,8 @@
-From 8a52fed487bf74d8999b01cf29e7fa616136f0a5 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Fri, 22 May 2026 20:57:45 +0200
-Subject: [PATCH] audio: skip SDL audio device when headless
+Subject: [PATCH 02/11] audio: skip SDL audio device when headless
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -79,6 +79,3 @@ index d9f1e44d..d5a31b98 100644
      if (Buffered() < 6000) {
          // Don't fill the audio buffer too much in case this happens
          SDL_QueueAudio(mDevice, buf, len);
--- 
-2.43.0
-

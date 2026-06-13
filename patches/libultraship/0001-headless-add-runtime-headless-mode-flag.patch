@@ -1,8 +1,8 @@
-From 05a076872d5e0398365d490c694a95154fe732f2 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Fri, 22 May 2026 20:43:55 +0200
-Subject: [PATCH] headless: add runtime headless-mode flag
+Subject: [PATCH 01/11] headless: add runtime headless-mode flag
 
 Introduces Ship::Headless::{SetEnabled,IsEnabled} as a minimal
 singleton (one static bool) controlling whether display/audio
@@ -17,39 +17,9 @@ the .cpp gets compiled into libultraship.
 This patch alone is a no-op; consumers (audio stub, EGL backend,
 ImGui guard) will read IsEnabled() at the appropriate points.
 ---
- include/ship/headless/Headless.h | 20 ++++++++++++++++++++
- src/ship/CMakeLists.txt          |  7 +++++++
- src/ship/headless/Headless.cpp   | 27 +++++++++++++++++++++++++++
- 3 files changed, 54 insertions(+)
- create mode 100644 include/ship/headless/Headless.h
- create mode 100644 src/ship/headless/Headless.cpp
+ src/ship/CMakeLists.txt | 7 +++++++
+ 1 file changed, 7 insertions(+)
 
-diff --git a/include/ship/headless/Headless.h b/include/ship/headless/Headless.h
-new file mode 100644
-index 00000000..e8d448de
---- /dev/null
-+++ b/include/ship/headless/Headless.h
-@@ -0,0 +1,20 @@
-+#pragma once
-+
-+#ifdef __cplusplus
-+
-+namespace Ship::Headless {
-+
-+void SetEnabled(bool enabled);
-+bool IsEnabled();
-+
-+} // namespace Ship::Headless
-+
-+extern "C" {
-+#endif
-+
-+void Ship_Headless_SetEnabled(int enabled);
-+int Ship_Headless_IsEnabled(void);
-+
-+#ifdef __cplusplus
-+}
-+#endif
 diff --git a/src/ship/CMakeLists.txt b/src/ship/CMakeLists.txt
 index 9de898b4..414c915a 100644
 --- a/src/ship/CMakeLists.txt
@@ -68,39 +38,3 @@ index 9de898b4..414c915a 100644
  #=================== Controller ===================
  
  file(GLOB_RECURSE Source_Files__Controller RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "controller/*.cpp")
-diff --git a/src/ship/headless/Headless.cpp b/src/ship/headless/Headless.cpp
-new file mode 100644
-index 00000000..7c894bc4
---- /dev/null
-+++ b/src/ship/headless/Headless.cpp
-@@ -0,0 +1,27 @@
-+#include "ship/headless/Headless.h"
-+
-+namespace Ship::Headless {
-+
-+static bool sEnabled = false;
-+
-+void SetEnabled(bool enabled) {
-+    sEnabled = enabled;
-+}
-+
-+bool IsEnabled() {
-+    return sEnabled;
-+}
-+
-+} // namespace Ship::Headless
-+
-+extern "C" {
-+
-+void Ship_Headless_SetEnabled(int enabled) {
-+    Ship::Headless::SetEnabled(enabled != 0);
-+}
-+
-+int Ship_Headless_IsEnabled(void) {
-+    return Ship::Headless::IsEnabled() ? 1 : 0;
-+}
-+
-+} // extern "C"
--- 
-2.43.0
-

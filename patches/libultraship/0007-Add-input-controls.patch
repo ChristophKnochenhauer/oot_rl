@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Mon, 25 May 2026 17:12:04 +0200
+Subject: [PATCH 07/11] Add input controls
+
+---
+ .../controller/controldeck/ControlDeck.cpp            | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/src/libultraship/controller/controldeck/ControlDeck.cpp b/src/libultraship/controller/controldeck/ControlDeck.cpp
+index c7c96f63..46ca392c 100644
+--- a/src/libultraship/controller/controldeck/ControlDeck.cpp
++++ b/src/libultraship/controller/controldeck/ControlDeck.cpp
+@@ -7,6 +7,8 @@
+ #include <imgui.h>
+ #include "ship/controller/controldevice/controller/mapping/mouse/WheelHandler.h"
+ 
++#include "ship/headless/Headless.h"
++
+ namespace LUS {
+ ControlDeck::ControlDeck(std::vector<CONTROLLERBUTTONS_T> additionalBitmasks,
+                          std::shared_ptr<Ship::ControllerDefaultMappings> controllerDefaultMappings,
+@@ -69,6 +71,15 @@ void ControlDeck::WriteToOSContPad(OSContPad* pad) {
+         if (controller != nullptr) {
+             controller->ReadToPad(&pad[i]);
+         }
++
++        if (Ship::Headless::HasPadOverride(static_cast<int>(i))) {
++            auto override_pad = Ship::Headless::GetPadOverride(static_cast<int>(i));
++            pad[i].button = override_pad.buttons;
++            pad[i].stick_x = override_pad.stick_x;
++            pad[i].stick_y = override_pad.stick_y;
++            pad[i].right_stick_x = override_pad.right_stick_x;
++            pad[i].right_stick_y = override_pad.right_stick_y;
++        }
+     }
+ }
+ } // namespace LUS

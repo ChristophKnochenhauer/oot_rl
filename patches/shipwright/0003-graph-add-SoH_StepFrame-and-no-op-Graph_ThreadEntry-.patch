@@ -1,14 +1,10 @@
-From fd7486ec00fb8a12d156489443c70180a0029a74 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
-Date: Wed, 20 May 2026 14:35:13 +0200
-Subject: [PATCH] graph: add SoH_StepFrame and no-op Graph_ThreadEntry in lib
- mode
+Date: Sat, 13 Jun 2026 12:51:34 +0200
+Subject: [PATCH 3/4] graph: add SoH_StepFrame and no-op Graph_ThreadEntry in
+ lib mode
 
-When BUILD_AS_LIB=ON, expose SoH_StepFrame() as the external entry
-point for advancing the game one frame. Graph_ThreadEntry becomes a
-no-op so the internal infinite loop is bypassed; external code
-(e.g. an RL environment) drives the frame loop instead.
 ---
  soh/src/code/graph.c | 9 +++++++++
  1 file changed, 9 insertions(+)
@@ -39,6 +35,3 @@ index 31dcb211e..972071c1f 100644
  void* Graph_Alloc(GraphicsContext* gfxCtx, size_t size) {
      TwoHeadGfxArena* thga = &gfxCtx->polyOpa;
  
--- 
-2.43.0
-

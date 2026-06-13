@@ -1,8 +1,8 @@
-From ac50e8aa78bb933b7fdb639142ba1c3f67f57ef3 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Fri, 22 May 2026 23:33:43 +0200
-Subject: [PATCH] Fast3dWindow: select EGL backend when headless (M3.2.4)
+Subject: [PATCH 05/11] Fast3dWindow: select EGL backend when headless (M3.2.4)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -51,6 +51,3 @@ index da8adcfd..4ebb4b99 100644
              break;
  #endif
  #ifdef __APPLE__
--- 
-2.43.0
-

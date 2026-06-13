@@ -1,24 +1,15 @@
-From 52ea16c1251ed38208520261e2e7e5e82b8ea612 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
-Date: Fri, 22 May 2026 11:41:27 +0200
-Subject: [PATCH] cmake: fix paths and version variables for embedded use
+Date: Sat, 13 Jun 2026 12:51:34 +0200
+Subject: [PATCH 1/4] cmake: embed SoH in parent build and add BUILD_AS_LIB
+ library mode
 
-When SoH is embedded via add_subdirectory(), CMAKE_SOURCE_DIR and
-CMAKE_PROJECT_VERSION_* refer to the parent project. This causes:
-- git operations to run in the parent repo (which may have no tags)
-- build.c.in to be filled with empty version constants
-
-Fixes:
-- CMAKE_SOURCE_DIR -> CMAKE_CURRENT_SOURCE_DIR in execute_process git
-  calls (CMakeLists.txt) and asset path copies (soh/CMakeLists.txt)
-- @CMAKE_PROJECT_VERSION_*@ -> @Ship_VERSION_*@ in build.c.in,
-  which is always set
 ---
  CMakeLists.txt          | 10 +++++-----
- soh/CMakeLists.txt      |  8 ++++----
+ soh/CMakeLists.txt      | 20 +++++++++++++++-----
  soh/src/boot/build.c.in |  8 ++++----
- 3 files changed, 13 insertions(+), 13 deletions(-)
+ 3 files changed, 24 insertions(+), 14 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 4429cc599..e4b96855e 100644
@@ -70,10 +61,29 @@ index 4429cc599..e4b96855e 100644
      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/soh
      COMMENT "Generating soh.o2r..."
 diff --git a/soh/CMakeLists.txt b/soh/CMakeLists.txt
-index 31955ebf9..d78340924 100644
+index 31955ebf9..1d1d699b8 100644
 --- a/soh/CMakeLists.txt
 +++ b/soh/CMakeLists.txt
-@@ -597,8 +597,8 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
+@@ -223,7 +223,17 @@ set(ALL_FILES
+ ################################################################################
+ # Target
+ ################################################################################
+-add_executable(${PROJECT_NAME} ${ALL_FILES})
++option(BUILD_AS_LIB "Build SoH as a static library for embedding (e.g. RL environments)" OFF)
++
++if(BUILD_AS_LIB)
++    add_library(${PROJECT_NAME} STATIC ${ALL_FILES})
++    target_compile_definitions(${PROJECT_NAME} PUBLIC SOH_AS_LIB=1)
++    target_include_directories(${PROJECT_NAME} PUBLIC
++        ${CMAKE_CURRENT_SOURCE_DIR}/include
++    )
++else()
++    add_executable(${PROJECT_NAME} ${ALL_FILES})
++endif()
+ 
+ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+ use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")
+@@ -597,8 +607,8 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
      add_custom_command(
      TARGET ${PROJECT_NAME}
      POST_BUILD
@@ -84,7 +94,7 @@ index 31955ebf9..d78340924 100644
      )
  endif()
  if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
-@@ -606,8 +606,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
+@@ -606,8 +616,8 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "NintendoSwitch|CafeOS")
          TARGET ${PROJECT_NAME}
          POST_BUILD
          COMMENT "Copying asset xmls..."
@@ -113,6 +123,3 @@ index 4467d04c8..4f0e427f6 100644
  
  const char gGitBranch[] = "@CMAKE_PROJECT_GIT_BRANCH@";
  const char gGitCommitHash[] = "@CMAKE_PROJECT_GIT_COMMIT_HASH@";
--- 
-2.43.0
-

@@ -1,0 +1,68 @@
+#ifndef SOH_LIB_H
+#define SOH_LIB_H
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void SoH_Init(int argc, char** argv);
+void SoH_StepFrame(void);
+void SoH_Shutdown(void);
+void SoH_SetHeadless(int enabled);
+
+/* Drive the engine from the title screen into live GamePlay via the proven
+ * File-Select sequence. Returns 1 once a valid GamePlay state is reached
+ * (scene loaded, Player spawned), 0 otherwise. */
+int SoH_BootToGameplay(void);
+
+typedef struct {
+    uint16_t buttons;
+    int8_t stick_x;
+    int8_t stick_y;
+    int8_t right_stick_x;
+    int8_t right_stick_y;
+} SoH_Input;
+
+void SoH_SetInput(int port, const SoH_Input* input);
+void SoH_ClearInput(int port);
+
+typedef struct {
+    int valid;
+
+    float pos_x;
+    float pos_y;
+    float pos_z;
+
+    float rot_x;
+    float rot_y;
+    float rot_z;
+
+    int16_t health;
+    int16_t max_health;
+    int16_t magic;
+    int16_t rupees;
+
+    int16_t scene_id;
+    uint16_t day_time;
+} SoH_GameState;
+
+int SoH_GetGameState(SoH_GameState* out);
+
+void SoH_EnableDebugView(uint32_t width, uint32_t height);
+void SoH_DisableDebugView(void);
+
+int SoH_SaveState(unsigned int slot);
+int SoH_LoadState(unsigned int slot);
+
+void SoH_EnableFrameCapture(void);
+void SoH_DisableFrameCapture(void);
+int  SoH_GetFrameDimensions(int* width, int* height);
+int  SoH_GetFrame(unsigned char* out);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SOH_LIB_H */

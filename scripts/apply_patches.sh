@@ -134,4 +134,8 @@ for sub_path in "external/Shipwright/libultraship" "external/Shipwright"; do
     apply_for_submodule "$sub_path" "${SUBMODULES[$sub_path]}"
 done
 
+# Link our own (non-upstream) files from overlay/ into the submodules. Final pass
+# so it survives the per-submodule reset --hard / clean -fd above.
+"$REPO_ROOT/scripts/link_overlay.sh"
+
 echo "Done."

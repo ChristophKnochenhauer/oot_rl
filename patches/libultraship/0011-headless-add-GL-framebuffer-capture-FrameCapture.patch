@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Sat, 13 Jun 2026 12:52:14 +0200
+Subject: [PATCH 11/11] headless: add GL framebuffer capture (FrameCapture)
+
+---
+ src/fast/interpreter.cpp | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/fast/interpreter.cpp b/src/fast/interpreter.cpp
+index ffe54fbd..3a9d51ea 100644
+--- a/src/fast/interpreter.cpp
++++ b/src/fast/interpreter.cpp
+@@ -40,6 +40,7 @@
+ #include <spdlog/fmt/fmt.h>
+ 
+ #include "ship/headless/DebugView.h"
++#include "ship/headless/FrameCapture.h"
+ 
+ std::stack<std::string> currentDir;
+ 
+@@ -4348,7 +4349,7 @@ void Interpreter::StartFrame() {
+ 
+     mPrvDimensions = mCurDimensions;
+     mPrevNativeDimensions = mNativeDimensions;
+-    bool forceFb = Ship::Headless::DebugView::GetInstance()->IsEnabled();
++    bool forceFb = Ship::Headless::DebugView::GetInstance()->IsEnabled() || Ship::Headless::IsFrameCaptureEnabled();
+     if (!ViewportMatchesRendererResolution() || mMsaaLevel > 1 || forceFb) {
+         mRendersToFb = true;
+         bool needsPathB = ViewportMatchesRendererResolution() && mMsaaLevel > 1 && !forceFb;

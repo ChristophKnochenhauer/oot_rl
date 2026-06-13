@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# Exports new dev-mode commits (baseline..HEAD) from each submodule into
+# patches/. Only *upstream-file* edits belong here. Our own new files live in
+# overlay/ and are symlinked into the submodules (see scripts/link_overlay.sh);
+# they are git-excluded inside the submodule, so they are never committed and
+# thus never exported. To change our own code, edit overlay/ directly.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

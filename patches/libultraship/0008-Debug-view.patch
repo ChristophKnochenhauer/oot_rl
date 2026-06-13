@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Tue, 26 May 2026 21:38:56 +0200
+Subject: [PATCH 08/11] Debug view
+
+---
+ include/fast/Fast3dWindow.h |  2 ++
+ src/fast/Fast3dWindow.cpp   | 14 ++++++++++++++
+ 2 files changed, 16 insertions(+)
+
+diff --git a/include/fast/Fast3dWindow.h b/include/fast/Fast3dWindow.h
+index 38ed53b8..5341564e 100644
+--- a/include/fast/Fast3dWindow.h
++++ b/include/fast/Fast3dWindow.h
+@@ -45,6 +45,8 @@ class Fast3dWindow : public Ship::Window {
+     bool IsFullscreen() override;
+     bool IsRunning() override;
+     uintptr_t GetGfxFrameBuffer() override;
++    uintptr_t GetGameFramebufferTexture() const;
++    bool IsRenderingToFramebuffer() const;
+     const char* GetKeyName(int32_t scancode) override;
+ 
+     void InitWindowManager();
+diff --git a/src/fast/Fast3dWindow.cpp b/src/fast/Fast3dWindow.cpp
+index 4ebb4b99..6fa7cf63 100644
+--- a/src/fast/Fast3dWindow.cpp
++++ b/src/fast/Fast3dWindow.cpp
+@@ -18,6 +18,8 @@
+ #endif
+ #include <fstream>
+ 
++#include "ship/headless/DebugView.h"
++
+ namespace Fast {
+ 
+ extern void GfxSetInstance(std::shared_ptr<Interpreter> gfx);
+@@ -216,6 +218,9 @@ bool Fast3dWindow::DrawAndRunGraphicsCommands(Gfx* commands, const std::unordere
+     mInterpreter->StartFrame();
+     // Execute the games gfx commands
+     mInterpreter->Run(commands, mtxReplacements);
++
++    Ship::Headless::DebugView::GetInstance()->CaptureFrame();
++
+     // Renders the game frame buffer to the final window and finishes the GUI
+     gui->EndDraw();
+     // Finalize swap buffers
+@@ -346,6 +351,15 @@ uintptr_t Fast3dWindow::GetGfxFrameBuffer() {
+     return mInterpreter->mGfxFrameBuffer;
+ }
+ 
++uintptr_t Fast3dWindow::GetGameFramebufferTexture() const {
++    if (!mInterpreter->mRendersToFb) return 0;
++    return (uintptr_t)mInterpreter->mRapi->GetFramebufferTextureId(mInterpreter->mGameFb);
++}
++
++bool Fast3dWindow::IsRenderingToFramebuffer() const {
++    return mInterpreter->mRendersToFb;
++}
++
+ const char* Fast3dWindow::GetKeyName(int32_t scancode) {
+     return mWindowManagerApi->GetKeyName(scancode);
+ }

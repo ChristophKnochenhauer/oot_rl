@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Christoph Knochenhauer
+ <69197793+ChristophKnochenhauer@users.noreply.github.com>
+Date: Sat, 13 Jun 2026 12:52:14 +0200
+Subject: [PATCH 10/11] ship: honor LUS_APP_BUNDLE_PATH override for app bundle
+ path
+
+---
+ src/ship/Context.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/ship/Context.cpp b/src/ship/Context.cpp
+index 88ab1826..b72a40b6 100644
+--- a/src/ship/Context.cpp
++++ b/src/ship/Context.cpp
+@@ -413,6 +413,9 @@ std::string Context::GetAppBundlePath() {
+ #endif
+ 
+ #ifdef __linux__
++    if (const char* env_override = std::getenv("LUS_APP_BUNDLE_PATH")) {
++        return std::string(env_override);
++    }
+     std::string progpath(PATH_MAX, '\0');
+     int len = readlink("/proc/self/exe", &progpath[0], progpath.size() - 1);
+     if (len != -1) {

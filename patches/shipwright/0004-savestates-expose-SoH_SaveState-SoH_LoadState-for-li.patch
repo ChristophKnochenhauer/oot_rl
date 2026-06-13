@@ -1,28 +1,14 @@
-From c7f86d4581d4486704adb55c6204566547fcf8cb Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
-Date: Thu, 28 May 2026 09:59:48 +0200
-Subject: [PATCH] Add savestate feature
+Date: Sat, 13 Jun 2026 12:51:34 +0200
+Subject: [PATCH 4/4] savestates: expose SoH_SaveState/SoH_LoadState for
+ library API
 
 ---
- soh/include/soh_lib.h               |  3 +++
  soh/soh/Enhancements/savestates.cpp | 18 ++++++++++++++++++
- 2 files changed, 21 insertions(+)
+ 1 file changed, 18 insertions(+)
 
-diff --git a/soh/include/soh_lib.h b/soh/include/soh_lib.h
-index 119b4fc46..a10d8fed6 100644
---- a/soh/include/soh_lib.h
-+++ b/soh/include/soh_lib.h
-@@ -48,6 +48,9 @@ int SoH_GetGameState(SoH_GameState* out);
- void SoH_EnableDebugView(uint32_t width, uint32_t height);
- void SoH_DisableDebugView(void);
- 
-+int SoH_SaveState(unsigned int slot);
-+int SoH_LoadState(unsigned int slot);
-+
- #ifdef __cplusplus
- }
- #endif
 diff --git a/soh/soh/Enhancements/savestates.cpp b/soh/soh/Enhancements/savestates.cpp
 index 16fb98690..5b245d16d 100644
 --- a/soh/soh/Enhancements/savestates.cpp
@@ -52,6 +38,3 @@ index 16fb98690..5b245d16d 100644
  void SaveStateMgr::SetCurrentSlot(unsigned int slot) {
      Ship::Context::GetInstance()->GetWindow()->GetGui()->GetGameOverlay()->TextDrawNotification(1.0f, true,
                                                                                                  "slot %u set", slot);
--- 
-2.43.0
-

@@ -1,40 +1,13 @@
-From 8e98e33dd52b65e7b0b49bfdcce928c56d35f5ae Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Christoph Knochenhauer
  <69197793+ChristophKnochenhauer@users.noreply.github.com>
 Date: Mon, 25 May 2026 13:44:58 +0200
-Subject: [PATCH] Skip ImGui rendering
+Subject: [PATCH 06/11] Skip ImGui rendering
 
 ---
- src/fast/backends/gfx_egl.cpp |  8 ++++++
- src/ship/window/gui/Gui.cpp   | 53 ++++++++++++++++++++++++++---------
- 2 files changed, 48 insertions(+), 13 deletions(-)
+ src/ship/window/gui/Gui.cpp | 53 ++++++++++++++++++++++++++++---------
+ 1 file changed, 40 insertions(+), 13 deletions(-)
 
-diff --git a/src/fast/backends/gfx_egl.cpp b/src/fast/backends/gfx_egl.cpp
-index 1568345e..9068eae4 100644
---- a/src/fast/backends/gfx_egl.cpp
-+++ b/src/fast/backends/gfx_egl.cpp
-@@ -1,6 +1,9 @@
- #ifdef LUS_HAS_EGL
- 
- #include "fast/backends/gfx_egl.h"
-+#include "ship/Context.h"
-+#include "ship/window/Window.h"
-+#include "ship/window/gui/Gui.h"
- #include <spdlog/spdlog.h>
- 
- namespace Fast {
-@@ -76,6 +79,11 @@ void GfxWindowBackendEGL::Init(const char* gameName, const char* gfxApiName,
-     }
- 
-     SPDLOG_INFO("EGL backend initialised: {}x{} PBuffer", mWindowWidth, mWindowHeight);
-+
-+    Ship::GuiWindowInitData window_impl;
-+    window_impl.Opengl.Window = nullptr;
-+    window_impl.Opengl.Context = mEglContext;
-+    Ship::Context::GetInstance()->GetWindow()->GetGui()->Init(window_impl);
- }
- 
- void GfxWindowBackendEGL::SwapBuffersBegin() {
 diff --git a/src/ship/window/gui/Gui.cpp b/src/ship/window/gui/Gui.cpp
 index 426a965e..48a67b8b 100644
 --- a/src/ship/window/gui/Gui.cpp
@@ -152,6 +125,3 @@ index 426a965e..48a67b8b 100644
      switch (Context::GetInstance()->GetWindow()->GetWindowBackend()) {
  
  #ifdef ENABLE_OPENGL
--- 
-2.43.0
-
