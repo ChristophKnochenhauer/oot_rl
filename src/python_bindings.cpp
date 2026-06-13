@@ -35,6 +35,26 @@ PYBIND11_MODULE(oot_rl, m) {
 
     m.def("step_frame", []() { SoH_StepFrame(); });
 
+    m.def("warp_to",
+        [](int entrance_id, int room_num, float x, float y, float z, int rot_y) {
+            return SoH_WarpTo(entrance_id, room_num, x, y, z, rot_y);
+        },
+        py::arg("entrance_id"),
+        py::arg("room_num") = 0,
+        py::arg("x") = 0.0f,
+        py::arg("y") = 0.0f,
+        py::arg("z") = 0.0f,
+        py::arg("rot_y") = 0);
+
+    m.def("warp_to_entrance", [](int entrance_id, int link_age) {
+        return SoH_WarpToEntrance(entrance_id, link_age);
+    }, py::arg("entrance_id"), py::arg("link_age") = -1);
+
+    m.def("enable_debug_view",
+        [](uint32_t width, uint32_t height) { SoH_EnableDebugView(width, height); },
+        py::arg("width") = 640, py::arg("height") = 480);
+    m.def("disable_debug_view", []() { SoH_DisableDebugView(); });
+
     m.def("set_input",
         [](int port, uint32_t buttons, int stick_x, int stick_y,
                                        int right_stick_x, int right_stick_y) {

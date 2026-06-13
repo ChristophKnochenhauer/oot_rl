@@ -17,6 +17,20 @@ void SoH_SetHeadless(int enabled);
  * (scene loaded, Player spawned), 0 otherwise. */
 int SoH_BootToGameplay(void);
 
+/* Drop the engine into a defined, controllable gameplay state: load the given
+ * entrance/room and place Link at (x, y, z) facing rotY (binary angle). Forwards
+ * to SoH's Warp(). Sidesteps the attract-demo boot path used by
+ * SoH_BootToGameplay(). Call after at least one stepped frame (needs an active
+ * game state). */
+int SoH_WarpTo(int entrance_id, int room_num, float x, float y, float z, int rot_y);
+
+/* Like SoH_WarpTo() but spawns Link at the entrance's OWN natural spawn point
+ * (always in-bounds — no coordinate guessing). The coarse path into controllable
+ * gameplay for M7-B3. Call from the title screen (before the attract demo's
+ * PlayState exists) so SoH's Warp() takes its clean, GAMEMODE_NORMAL branch.
+ * link_age: 0=adult, 1=child, -1=keep Warp()'s default (adult). */
+int SoH_WarpToEntrance(int entrance_id, int link_age);
+
 typedef struct {
     uint16_t buttons;
     int8_t stick_x;

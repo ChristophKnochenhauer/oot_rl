@@ -153,4 +153,20 @@ int SoH_BootToGameplay(void) {
     return 0;
 }
 
+/* Internal helper for SoH_WarpToEntrance() (implemented in SoH_Warp.cpp).
+ * SoH's Warp() always forces a fixed respawn position; clearing respawnFlag
+ * makes the upcoming entrance load fall back to the entrance's own natural,
+ * always-in-bounds spawn point instead. Lives here because gSaveContext is a C
+ * symbol most cleanly touched from this (C) translation unit. */
+void SoH_ResetRespawnOverride(void) {
+    gSaveContext.respawnFlag = 0;
+}
+
+/* Override Link's age after a warp. SoH's Warp() hardcodes adult (linkAge=0);
+ * our early-game envs want child (linkAge=1). 0=adult, 1=child. Must be set
+ * after Warp() and before the scene actually loads. */
+void SoH_SetLinkAge(int age) {
+    gSaveContext.linkAge = age;
+}
+
 #endif /* SOH_AS_LIB */
