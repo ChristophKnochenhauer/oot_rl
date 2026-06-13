@@ -5,5 +5,8 @@ mods
 
 compile_commands.json
 imgui.ini
-HANDOVER.md
 shipofharkinian.json
+
+# Build artifact: CMake writes the pybind11 module into python/ (~680 MB)
+python/*.so
+__pycache__/
