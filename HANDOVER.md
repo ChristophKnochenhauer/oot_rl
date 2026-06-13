@@ -207,13 +207,50 @@ während sie auf der Demo operieren.
 
 ## 7. Roadmap
 
-### M7 Baustein 3 — Gymnasium-Env (aktueller Fokus)
+### M7 Baustein 3 — Gymnasium-Env, GROBE Variante (aktueller Fokus)
 
-- [ ] Echtes Gameplay von der Attract-Demo unterscheiden (siehe §6) — der Blocker
-- [ ] `SoH_BootToGameplay()` im pybind11-Modul exponieren
-- [ ] `python/find_loading_zone.py` durchlaufen lassen → Door-Position ermitteln
-- [ ] `LeaveHouseEnv` mit dieser Position smoke-testen (zufällige Policy)
+> Bewusste Entscheidung (2026-06-13): jetzt reicht **grobes** Env-Bauen. Der
+> wissenschaftlich saubere, voll-deterministische Weg ist ein eigener späterer
+> Milestone (siehe unten). Hier nur so viel Determinismus wie nötig, um Envs zum
+> Laufen zu bringen.
+
+- [ ] Steuerbares Gameplay per **Warp** betreten statt auf Attract-Demo zu hoffen:
+      `SoH_WarpTo(entranceId, roomNum, x, y, z, rotY)` (dünner Forward auf
+      `Warp()`/`WarpPoint` aus `Enhancements/Warping.cpp`) in `soh_api.c` + pybind.
+      Evtl. `WarpPoint.bootToPoint` nutzen → umgeht die Demo-Frage ganz.
+- [ ] `save_state(0)` als groben Reset-Anker nach dem Warp (RNG/Kamera noch nicht
+      garantiert deterministisch — bewusst akzeptiert in dieser Phase).
+- [ ] `LeaveHouseEnv` auf diesem Warp-Anker smoke-testen (zufällige Policy)
 - [ ] `LeaveHouseEnv.reset` mit Dialog-Recovery (B+START für Menü-Aussteuerung)
+
+### Mx — Sauberes, deterministisches Env-Authoring (Scenario-System) — SPÄTER
+
+> Eigener Milestone. Ziel: zitierfähige, bit-reproduzierbare Env-Startzustände
+> für wissenschaftliches RL. Design aus der Discussion 2026-06-13:
+
+- [ ] **Zwei-Artefakt-Modell:** *Rezept* (deklarativ, portabel: SaveContext/Items
+      via Randomizer-Setter + `Sram_InitDebugSave`, Entrance/Warp **oder**
+      Cutscene-Einstieg, **expliziter RNG-Seed**) + *Snapshot* (frame-genauer
+      SoH-Savestate als Laufzeit-Anker).
+- [ ] **Savestate vollständig machen — RNG zuerst:** `rngSeed` ist ein TOTES Feld
+      (nie geschrieben/gelesen); `sRandInt`/`sRandFloat` sind `static` in
+      `code_800FD970.c` → liegen NICHT im erfassten `gSystemHeap`. Boot deterministisch
+      seeden (`Rand_Seed`, statt `osGetTime()` in `z_play.c:539`) + RNG in den
+      Savestate aufnehmen (Accessor nötig).
+- [ ] **RNG-Politik per Switch:** fester globaler Seed (max. Reproduzierbarkeit)
+      ODER kontrollierter Pro-Episode-Seed (Generalisierung) — beides möglich.
+- [ ] **Cutscene-Starts** (z.B. Frame 0 der Intro — enthält Lern-relevante Infos):
+      Cutscenes laufen in der PlayState → `save_state` erlaubt; per Frame-Step exakt
+      positionieren.
+- [ ] **Kamera-nach-Intro:** KEIN Savestate-Bug — OoT-Save-Semantik. Direkt nach
+      der Intro hängt die Kamera oben; nach in-game Save+Load ist sie woanders,
+      gesteuert über einen Save-Flag (Lead: `sceneSetupIndex`/`cutsceneIndex` bzw.
+      `respawn`/`respawnFlag`-Pfad in `Warping.cpp`). Hier ansetzen, nicht im Snapshot.
+- [ ] **Authoring-Tool:** Python-Driver (boot, seed, frame-step, snapshot, Rezept
+      als JSON) + SoHs **eigene ImGui-Debug-Windows** im DebugView gesurfaced
+      (`debugSaveEditor`, `actorViewer`, `valueViewer`, `colViewer`) statt eigenem
+      Inspector. Braucht Modus-Toggle: Authoring = ImGui an (Patch `0006` schaltet
+      es im Headless-Pfad ab), Training = ImGui aus.
 
 ### M8 — Erstes Training
 
