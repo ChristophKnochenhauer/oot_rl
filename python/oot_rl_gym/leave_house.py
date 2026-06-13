@@ -170,7 +170,14 @@ class LeaveHouseEnv(gym.Env):
         return soh.get_frame()
 
     def close(self):
-        pass
+        # Shut the engine down so the process can exit; SoH keeps background
+        # threads alive otherwise (a bare interpreter exit hangs). SoH is a
+        # process-global singleton, so this closes it for good — re-init within
+        # the same process is not supported.
+        global _SOH_INITED
+        if _SOH_INITED:
+            soh.shutdown()
+            _SOH_INITED = False
 
     def _info(self, gs, *, action_name: str, dist: float | None = None) -> dict:
         info = {

@@ -353,10 +353,13 @@ Im FBO-Pfad ist der Frame **bereits top-down** (`opengl_invertY=true` in Fast3d)
 
 ### Action-Set für RL
 
-Mit `BTN_A` im Action-Vokabular kann der Agent in Dialog-Boxen geraten (in
-NPC-haltigen Szenen) und dann ist Save/Load blockiert. In Link's Haus (Scene 52)
-sind keine NPCs → A safe. In Kokiri Forest (Scene 81) sind viele Kinder → A
-entweder rausnehmen oder Dialog-Recovery robust machen.
+Mit `BTN_A` im Action-Vokabular kann der Agent in Dialog-Boxen geraten und dann
+ist Save/Load blockiert (`load_state` failt mit rc=4). **Korrektur (2026-06-13):
+auch in Link's Haus (Scene 52) ist A NICHT safe** — beim PPO-Smoke triggerte A
+eine Text-Box (textId 0x22a). Endet eine Episode in einem offenen Dialog, failt
+der Reset-`load_state`. Mitigation: A aus dem Action-Set nehmen ODER Dialog-Recovery
+(B+START) im `reset()` robust machen. (Kokiri Forest = Scene 0x55 = 85, NICHT 81 —
+81 ist Hyrule Field.)
 
 ## 9. Dev-Workflow
 

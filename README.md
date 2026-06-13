@@ -14,7 +14,8 @@ restore via savestates.
 - Ubuntu 24.04 (or compatible), GCC 13+
 - CMake ≥ 3.26, Ninja, ccache
 - Python 3.11 (Conda recommended) with `pybind11`, `numpy`, `gymnasium`
-  (optionally `imageio[ffmpeg]` for the `python/test_warp.py record` video helper)
+  (optionally `imageio[ffmpeg]` for the `record` video helpers, and
+  `stable-baselines3[extra]` for the `python/train_leavehouse.py` PPO harness)
 - Native dev libraries (EGL, SDL2, libpng, …) — installed by `scripts/install_deps.sh`
 - Your own legally-owned OoT N64 ROM, extracted to `oot.o2r` (one-time)
 
