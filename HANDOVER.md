@@ -243,6 +243,10 @@ während sie auf der Demo operieren.
       `code_800FD970.c` → liegen NICHT im erfassten `gSystemHeap`. Boot deterministisch
       seeden (`Rand_Seed`, statt `osGetTime()` in `z_play.c:539`) + RNG in den
       Savestate aufnehmen (Accessor nötig).
+- [x] **ActorDB `numLoaded` (dieselbe Gap-Klasse, aber CRASH)** — bereits gelöst,
+      weil es harte Abstürze gab: Overlay `SoH_ActorCounts.cpp` snapshottet/restored
+      die Counter um save/load (`LeaveHouseEnv` verdrahtet). Verifiziert (50 Zyklen).
+      Beim sauberen Savestate sollte das idealerweise mit hinein.
 - [ ] **RNG-Politik per Switch:** fester globaler Seed (max. Reproduzierbarkeit)
       ODER kontrollierter Pro-Episode-Seed (Generalisierung) — beides möglich.
 - [ ] **Cutscene-Starts** (z.B. Frame 0 der Intro — enthält Lern-relevante Infos):

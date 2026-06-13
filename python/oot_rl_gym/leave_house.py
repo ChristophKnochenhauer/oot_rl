@@ -127,6 +127,8 @@ class LeaveHouseEnv(gym.Env):
             raise RuntimeError("warp did not reach a valid GamePlay state")
         self._initial_scene = int(gs.scene_id)
         soh.save_state(self.save_slot)
+        # Baseline for the actor-count workaround (see reset()).
+        soh.snapshot_actor_counts()
         self._anchored = True
 
     def reset(self, *, seed=None, options=None):
@@ -135,6 +137,10 @@ class LeaveHouseEnv(gym.Env):
             self._build_anchor()
         else:
             soh.load_state(self.save_slot)
+            # load_state doesn't restore ActorDB numLoaded counters (they live
+            # outside gSystemHeap); without this they leak each reset and
+            # eventually overflow -> assert in Actor_Spawn. Re-sync them.
+            soh.restore_actor_counts()
         soh.clear_input()
         soh.step_frame()
         self._steps = 0

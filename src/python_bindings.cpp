@@ -126,6 +126,9 @@ PYBIND11_MODULE(oot_rl, m) {
         check(SoH_LoadState(slot), "load_state");
     }, py::arg("slot") = 0);
 
+    m.def("snapshot_actor_counts", []() { SoH_SnapshotActorCounts(); });
+    m.def("restore_actor_counts",  []() { SoH_RestoreActorCounts();  });
+
     m.def("enable_frame_capture",  []() { SoH_EnableFrameCapture();  });
     m.def("disable_frame_capture", []() { SoH_DisableFrameCapture(); });
 

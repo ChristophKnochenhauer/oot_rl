@@ -70,6 +70,13 @@ void SoH_DisableDebugView(void);
 int SoH_SaveState(unsigned int slot);
 int SoH_LoadState(unsigned int slot);
 
+/* Work around a savestate gap: ActorDB per-type load counters (numLoaded) live
+ * outside gSystemHeap, so load_state leaks them and eventually overflows
+ * (assert numLoaded < 255 in Actor_Spawn). Snapshot right after SoH_SaveState,
+ * restore right after SoH_LoadState. */
+void SoH_SnapshotActorCounts(void);
+void SoH_RestoreActorCounts(void);
+
 void SoH_EnableFrameCapture(void);
 void SoH_DisableFrameCapture(void);
 int  SoH_GetFrameDimensions(int* width, int* height);
