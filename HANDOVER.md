@@ -1,10 +1,10 @@
 # OoT RL — Project Handover
 
-> **Status (Snapshot Ende M7 Baustein 2):** Native Bindings funktionieren end-to-end
-> (Build, Init, Frame-Capture, Save/Load). Erste Env-Klasse `LeaveHouseEnv` ist
-> geschrieben. Offener Blocker für M7 Baustein 3: der Boot landet in der
-> Title-Attract-Demo (Scene 81), nicht in agenten-steuerbarem Gameplay — und
-> `gs.valid` unterscheidet die beiden nicht. Siehe §6.
+> **Status (Snapshot M8, 2026-07-05):** M7 ist abgeschlossen — steuerbares Gameplay
+> wird per Warp vom Titlescreen betreten (§6), `LeaveHouseEnv` läuft stabil auf
+> einem Savestate-Anker, das SB3/PPO-Prototyping-Harness (M8) existiert. Nächste
+> Schritte laut Roadmap §7: Härtung (M8.5) → Step-Pfad-Performance &
+> Grafik-Konfiguration (M8.6) → Parallelisierung (M9).
 
 ---
 
@@ -51,9 +51,12 @@ oot_rl/
 ├── scripts/                    # build.sh, apply_patches.sh, link_overlay.sh,
 │                               #   start_dev.sh, export_patches.sh, leave_dev.sh
 ├── python/
-│   ├── oot_rl/envs/leave_house.py   # erstes Trainings-Env (WIP)
-│   ├── find_loading_zone.py         # Helper zur Door-Position-Ermittlung (WIP)
+│   ├── oot_rl_gym/leave_house.py    # erstes Trainings-Env (Package-Name ≠ oot_rl,
+│   │                                #   sonst schattet es das native Modul)
+│   ├── train_leavehouse.py          # M8 SB3/PPO-Prototyping-Harness (throwaway)
 │   ├── test_native.py               # Smoke-Test der Bindings
+│   ├── test_gym.py / test_warp.py / test_actorcounts.py   # weitere Test-Skripte
+│   ├── find_loading_zone.py         # Helper zur Door-Position-Ermittlung
 │   └── oot_rl.cpython-*.so          # Build-Output (gitignored, ~680 MB)
 ├── data/
 │   ├── oot.o2r                 # extrahierte Game-Assets (aus ROM)
@@ -165,74 +168,195 @@ w, h = soh.get_frame_dimensions()   # typisch (640, 480)
 frame = soh.get_frame()             # numpy (480, 640, 3) uint8, RGB, top-down
 ```
 
-## 6. Aktueller Blocker (was als nächstes zu tun ist)
+## 6. Gameplay-Einstieg (M7-Blocker — GELÖST via Warp)
 
-**Boot landet in der Attract-Demo, nicht in agenten-steuerbarem Gameplay.**
+**Der Weg in steuerbares Gameplay ist der Warp vom Titlescreen**, nicht der
+Auto-Boot: `soh.warp_to_entrance(entrance_id, link_age)` (vom Titlescreen aus,
+d.h. bevor die Attract-Demo ihre PlayState erzeugt hat — dann nimmt SoHs `Warp()`
+den sauberen `GAMEMODE_NORMAL`-Branch). Danach settlen lassen, `save_state(0)`
+als Episoden-Anker. Genau so macht es `LeaveHouseEnv._build_anchor()`.
 
-Mit neutralem Input lädt die Engine `data/file1.sav` automatisch und wird um
-Frame ~231 in **Scene 81 (Kokiri Forest)** `valid`. Aber die wild umher-
-teleportierenden Link-Positionen zeigen: das ist die **Title-Screen-Attract-
-Demo**, kein steuerbares Gameplay. `save_state`/`load_state` funktionieren dort
-(Engine ist im GamePlay-Mode), daher "bestehen" smoke_test und `test_native.py`,
-während sie auf der Demo operieren.
+Historischer Kontext (der frühere M7-Blocker, weiterhin wichtig zu wissen):
 
-> **Wichtig:** `gs.valid == true` heisst NUR "GameState-Struct ist befüllt",
-> NICHT "Agent steuert Link". Das ist der Kern des Blockers.
-
-### Was NICHT mehr gilt (korrigiert ggü. älteren Notizen)
-
-- Der Boot bleibt **nicht** im File-Select hängen — er läuft in die Attract-Demo.
-- Die alte `A/START/A/A`-Button-Sequenz aus `hello.cpp` macht es **schlechter**:
-  START während der laufenden Demo kickt RAUS in den File-Select, wo `valid` nie
-  wahr wird. Deshalb steppt der native `SoH_BootToGameplay()` (in `soh_api.c`) nur
-  bis `valid` und versucht bewusst NICHT, Demo von echtem Save-Load zu unterscheiden.
-
-### Was zu tun ist
-
-1. **Echtes Gameplay von der Attract-Demo unterscheiden.** Das ist der offene
-   Kern. Kandidaten: Demo-/Title-State-Flag im Game-Context lesen (statt nur
-   `valid`), oder eine Bedingung finden, unter der `file1.sav` als
-   *steuerbarer* Spielstand geladen wird (nicht als Demo). Scene-Id allein
-   reicht nicht — die Demo läuft selbst in Scene 81.
-
-2. **Snapshot erst nach echtem Gameplay.** SoH-Savestates sind RAM-only und nach
-   jedem Prozess-Start leer. Sobald (1) gelöst ist: einmalig `soh.save_state(0)`
-   als Reset-Anker, dann erst in die Episode-Loop. (Aktuell ruft
-   `find_loading_zone.py` direkt `load_state(0)` auf einen leeren Slot → rc=4.)
-
-3. **`SoH_BootToGameplay()` durch Python exponieren.** Existiert nativ in
-   `soh_api.c`, ist aber noch nicht im pybind11-Modul gebunden — sobald (1)
-   geklärt ist, hier die verifizierte Sequenz kapseln, damit C++ und Python
-   exakt denselben Boot teilen.
+- Mit neutralem Input lädt die Engine `data/file1.sav` automatisch und läuft um
+  Frame ~231 in die **Title-Screen-Attract-Demo** (Scene 81, Hyrule Field) — die
+  Engine ist dort im GamePlay-Mode (`save_state` funktioniert), aber der Agent
+  steuert Link NICHT.
+- **`gs.valid == true` heisst NUR "GameState-Struct ist befüllt", NICHT "Agent
+  steuert Link".** Auch die Attract-Demo ist `valid`.
+- `SoH_BootToGameplay()` (steppte nur bis `valid`, erreichte damit bestenfalls
+  die Demo) ist in M8.5 **entfernt** — es war vom Warp-Pfad abgelöst und `valid`
+  ≠ steuerbar. Der Einstieg ist ausschließlich der Warp; wer nur bis `valid`
+  steppen will (z.B. der Smoke-Test), macht das mit einer lokalen Schleife.
 
 ## 7. Roadmap
 
-### M7 Baustein 3 — Gymnasium-Env, GROBE Variante (aktueller Fokus)
+> **Projektziel als Kalibrierung:** oot_rl liefert die *Infrastruktur* für
+> RL-Forschung an OoT — schnell, deterministisch, parallelisierbar, flexibel
+> konfigurierbar. Lern-Strategien (Exploration, Curricula, Demos, Algorithmen)
+> sind bewusst NICHT Teil dieser Roadmap; die Infrastruktur muss sie nur
+> ermöglichen, ohne sie vorwegzunehmen.
+>
+> **Leitmetrik (ab M8.6 bei jedem Schritt mitführen):** Env-Steps/s pro Prozess
+> und aggregiert, plus "Spielstunden pro Wallclock-Stunde". Compute ist knapp und
+> OoT teuer — jede Optimierung wird gegen diese Zahlen belegt, nicht vermutet.
 
-> Bewusste Entscheidung (2026-06-13): jetzt reicht **grobes** Env-Bauen. Der
-> wissenschaftlich saubere, voll-deterministische Weg ist ein eigener späterer
-> Milestone (siehe unten). Hier nur so viel Determinismus wie nötig, um Envs zum
-> Laufen zu bringen.
+### M7 — Gymnasium-Env, GROBE Variante — ABGESCHLOSSEN
 
-- [x] Steuerbares Gameplay per **Warp** betreten statt auf Attract-Demo zu hoffen:
-      `soh.warp_to_entrance(entrance_id, link_age)` (+ `warp_to` für exakte pos),
-      Overlay `SoH_Warp.cpp` → `Warp()`/`WarpPoint`. Vom Titlescreen aus aufrufen
-      (gPlayState==NULL → Warp()s sauberer Branch). Verifiziert: Kind-Link in
-      Link's Haus (entrance 0xBB → scene 52), steuerbar.
-- [x] `save_state(0)` als groben Reset-Anker nach dem Warp (RNG/Kamera noch nicht
-      garantiert deterministisch — bewusst akzeptiert). Reset stellt exakt wieder her.
-- [x] `LeaveHouseEnv` (`python/oot_rl_gym/`) auf diesem Warp-Anker smoke-getestet
-      (`python/test_gym.py`, zufällige Policy): konstruiert, ankert deterministisch,
-      steppt, resettet. Erfolg = Szenenwechsel (Haus→Kokiri). Eigenes Package, weil
-      `oot_rl` (das .so) sonst den Import schattet.
-- [ ] `LeaveHouseEnv.reset` mit Dialog-Recovery (B+START) — in Scene 52 (keine NPCs)
-      noch nicht nötig; relevant ab NPC-Szenen.
-- [ ] Inventar/Alter/exakte Tür-Position sauber festlegen → Authoring-Milestone.
+- [x] Steuerbares Gameplay per **Warp** vom Titlescreen (`warp_to_entrance` /
+      `warp_to`, Overlay `SoH_Warp.cpp`). Verifiziert: Kind-Link in Link's Haus
+      (entrance 0xBB → scene 52), steuerbar. Details §6.
+- [x] `save_state(0)` als grober Reset-Anker nach dem Warp; Reset stellt exakt
+      wieder her (RNG/Kamera bewusst noch nicht deterministisch → Mx).
+- [x] `LeaveHouseEnv` (`python/oot_rl_gym/`) smoke-getestet (`test_gym.py`).
+- → Offene Reste wandern: Dialog-Recovery (B+START) in die `SoHEnv`-Basisklasse
+  (M8.5); Inventar/Alter/exakte Startzustände ins Authoring-Milestone (Mx).
+
+### M8 — Erstes Training (Prototyping, NICHT optimales Lernen) — WEITGEHEND FERTIG
+
+> Ziel: die Pipeline end-to-end zum Laufen bringen, nicht optimal lernen. Das Env
+> bleibt **algorithmus-agnostisch** (`gym.Env`); SB3 ist nur Prototyping-Harness.
+
+- [x] Observation-Wrapper (`ResizeObservation` 84×84, optional Grayscale,
+      `VecFrameStack` 4) in `train_leavehouse.py`.
+- [x] **SB3 PPO** als Prototyping-Harness (`CnnPolicy`), bewusst throwaway.
+- [x] Eval + MP4 der Policy (`--record`).
+- [x] Single-process Steps/s als erste Baseline notieren (wird in M8.6 durch die
+      Profiling-Zerlegung abgelöst). Skripte: `python/bench/bench_step.py` (Config
+      1–3) und `python/bench/bench_env.py` (Config 4), je eigener Prozess.
+
+  **Baseline 2026-07-05** (Ryzen 9 5950X 16C/32T, RTX 3090, headless EGL; je 2000
+  Frames nach Warp-Anker, 200 Frames Warmup ausgeklammert; in-game 20 fps ⇒
+  Spielstunden/Wallclock-Stunde = fps/20):
+
+  | # | Konfiguration | Frames/s | Steps/s | Spielstd./Wallclock-Std. |
+  |---|---|---|---|---|
+  | 1 | Engine-Step, Frame-Capture AUS | ~195 | — | ~9.8× |
+  | 2 | Engine-Step, Frame-Capture AN, kein get_frame | ~225 | — | ~11.3× |
+  | 3 | Engine-Step + get_frame() jeden 4. Frame | ~205 | — | ~10.3× |
+  | 4 | `LeaveHouseEnv` end-to-end, Random-Policy (frame_skip=4, get_frame/Step) | ~184 | ~46 | ~9.2× |
+
+  Auffälligkeiten (direkter Input für M8.6):
+  - Frame-Capture zu aktivieren kostet **nichts** — der Nicht-Capture-Pfad (Config
+    1, ~195 fps) ist reproduzierbar *langsamer* als der Capture-Pfad (Config 2,
+    ~225 fps). Der teure Anteil ist nicht die Capture-FBO, sondern der
+    **get_frame()-Readback**: Config 3 verliert ggü. Config 2 ~20 fps bei nur jedem
+    4. Frame. get_frame ist damit der Haupt-Hebel für M8.6 (Downscale nativ,
+    Readback reduzieren/asynchron).
+  - Config 4 (~46 Steps/s) liegt unter Config 3 trotz identischer get_frame-Kadenz:
+    die Differenz (~205→~184 fps) ist reiner Python-Env-Overhead pro Step
+    (Action-Dispatch, `get_game_state`, numpy, Reward). Klein, aber vor M9 messbar.
+
+> **Architektur-Entscheidung (2026-06-13, bestätigt 2026-07-05):** RL-Loop bleibt
+> Python/`gym.Env`, NICHT nach C++ portieren. Der Singleton-Constraint (SoH
+> process-global) verbietet in-process-Vektorisierung → Parallelität ist so oder
+> so multi-process (M9). Heiße Pfade sind schon nativ; was noch nativ werden muss,
+> ist der Observation-Pfad (M8.6), nicht der RL-Loop.
+
+### M8.5 — Härtung & API-Konsolidierung (aus Architektur-Review 2026-07-05)
+
+> Alles hier ist JETZT billig und wird mit jedem weiteren Env teurer. Vor dem
+> nächsten Env erledigen.
+
+- [x] **Eine rc-Konvention für die gesamte C-API:** 0 = Erfolg, negative
+      Fehlercodes. `SoH_GetGameState`/`SoH_WarpTo*` auf 0=Erfolg umgestellt
+      (Overlay); "kein PlayState/Player" bleibt ein legitimer Zustand über das
+      `valid`-Feld (rc bleibt 0). `SoH_SaveState`/`SoH_LoadState` mappen die
+      positiven `SaveStateReturn`-Codes auf negativ (`-rc`, z.B. `-4` =
+      `FAIL_WRONG_GAMESTATE`/Dialog offen — patch `0004`). Alle pybind-Bindings
+      einheitlich über `check()` → Exceptions; `warp_to`/`warp_to_entrance`
+      werfen jetzt statt rc zurückzugeben. Konvention zentral im Header
+      dokumentiert.
+- [ ] **Actor-Count-Workaround hinter die Savestate-API ziehen:**
+      Snapshot/Restore der ActorDB-`numLoaded`-Counter in `SoH_SaveState`/
+      `SoH_LoadState` kapseln (pro Slot); `snapshot_actor_counts`/
+      `restore_actor_counts` aus der Python-API entfernen. Prinzip: künftige
+      Savestate-Lücken-Fixes (RNG, Mx) ebenfalls in der C-Schicht kapseln —
+      nie als gepaarte Aufrufe, die jeder Caller kennen muss.
+- [ ] **`runtime.py` + `SoHEnv`-Basisklasse:** ein Modul besitzt den
+      Prozess-Singleton (init, frame-dims-Polling, shutdown/refcount statt
+      `close()` mit globaler Fernwirkung); eine Basisklasse kapselt das
+      Anchor-Muster (Boot → Warp → Settle → `save_state`) inkl. Dialog-Recovery
+      (B+START) im `reset()`. Konkrete Envs definieren nur noch Task:
+      Actions, Reward, Terminierung.
+- [ ] **Packaging:** `pyproject.toml` (scikit-build-core), Paket `oot_rl` mit
+      der nativen Extension als `oot_rl._native` (löst das
+      `oot_rl_gym`-Shadowing-Workaround strukturell), `pip install -e .`.
+      Test-Skripte → pytest-Suite mit **Prozess-pro-Test** (Singleton!),
+      über CTest aufrufbar.
+- [ ] **CI:** Workflow, der `apply_patches.sh` + Build gegen die gepinnten
+      Submodule laufen lässt — die Patch-Serie (15 Patches) ist die fragilste
+      Stelle des Projekts; Brüche müssen vor dem Merge auffallen.
+- [x] **Aufräumen:** `SoH_BootToGameplay()` entfernt (Warp ist der Einstieg,
+      true ≠ steuerbar, §6); der Smoke-Test steppt jetzt lokal bis
+      `GameState.valid`. `[pybind11-debug]`-Messages aus dem CMakeLists entfernt.
+
+### M8.6 — Step-Pfad-Performance & Grafik-Konfiguration
+
+> Single-Process-Gewinne multiplizieren sich in M9 mit 64–80. Reihenfolge:
+> ERST die Profiling-Zerlegung, DANN gezielt optimieren — nicht raten.
+
+- [ ] **Profiling-Zerlegung pro Step:** Zeitanteile Spiellogik / Audio / Raster /
+      Readback / Python-Overhead. Etabliert die Leitmetrik-Baseline.
+- [ ] **Audio-Synthese im Headless komplett skippen.** Patch `0002` skippt nur
+      das SDL-Device — Sequenz-Playback + Mixing (N64-Audio-DSP-Emulation) laufen
+      pro Frame weiter und sind im Training reine Verschwendung. Kurzschluss vor
+      der Synthese (AudioMgr-Pfad), nicht erst vor der Ausgabe.
+- [ ] **`step_frames(n, render_last_only=True)`:** Bei frame_skip=n braucht nur
+      der letzte Frame Pixel; OoT-Logik liest (bis auf seltene
+      Framebuffer-Effekte — dokumentieren) nie aus dem Framebuffer. Zwischenframes
+      ohne Fast3d-Rasterisierung steppen. Reduziert zugleich die
+      Python↔C-Roundtrips auf 1 pro Aktion.
+- [ ] **Readback-Pfad auf die GPU:** Downscale (+ optional Grayscale) per Blit in
+      ein kleines FBO, Readback dann z.B. 84×84×1 (~7 KB) statt synchronem
+      `glGetTexImage` über 640×480×3 (~900 KB, `FrameCapture.cpp`). Löst
+      Readback-Stall, CPU-Resize und die M9-IPC-Payload in einem. Optional
+      zusätzlich PBO-Double-Buffering.
+- [ ] **Grafik-Konfiguration pro Prozess** (fix bei `init()`, kein
+      Laufzeit-Umschalten nötig) — als ein Config-Struct/Setter-Satz nativ, in
+      Python als Env-Konstruktor-Parameter:
+      - interne Renderauflösung (N64-nativ 320×240 oder weniger — 640×480
+        rastern ist Verschwendung, wenn die Policy 84×84 sieht),
+      - Capture-Auflösung (GPU-Downscale-Ziel) und RGB vs. Grayscale,
+      - frame_skip nativ (Parameter von `step_frames`),
+      - Frame-Capture **komplett aus** für Envs ohne Pixel-Observations — dann
+        entfallen Rastern + Readback ganz (State-only-Envs steppen um
+        Größenordnungen schneller),
+      - Platz für weitere Schalter (Texturfilter, AA, …) im selben Struct.
+- [ ] **Flexibler State-Readout als Infrastruktur:** `SoH_GetGameState`
+      erweiterbar halten bzw. generische Feld-Accessoren ergänzen, damit Envs
+      ihre Observations frei aus RAM-State und/oder Pixeln mischen können —
+      welche Observations sinnvoll sind, ist Forschungsfrage, nicht Infrastruktur.
+
+### M9 — Parallelisierung
+
+- [ ] **Worker-Protokoll:** ein SoH-Prozess pro Env (Singleton-Constraint,
+      Threads unmöglich); außen ein VecEnv-artiges Interface. **Asynchrones
+      Stepping** (EnvPool-Stil: Learner konsumiert fertige Batches, wartet nicht
+      auf den langsamsten Env — Resets/Scene-Loads streuen stark; bei 64–80
+      Prozessen dominiert sonst der Straggler).
+- [ ] **Shared-Memory-Ringpuffer** für Observations (kein Pickling über Pipes);
+      mit M8.6-Downscale sind das ~7 KB/Step.
+- [ ] **GPU-Zuteilung:** `EGL_PLATFORM_DEVICE_EXT` pro Prozess;
+      Sättigungs-Benchmark Envs-pro-GPU **inklusive Learner-Konkurrenz** (der
+      Learner braucht dieselben 2 GPUs).
+- [ ] **Gegenexperiment Software-GL (llvmpipe)** auf den ~100 Cores: bei
+      320×240-Raster und 84×84-Obs ist die Rasterlast winzig — gut möglich, dass
+      CPU-Rendering besser skaliert und beide GPUs exklusiv dem Learner gehören.
+      Ein Benchmark-Tag, potenziell großer Payoff.
+- [ ] **Speicher-Footprint messen** (N × Heap + Assets + GL-Kontext; Assets
+      werden pro Prozess geladen) und **CPU-Pinning** der Worker.
+- [ ] **Abnahmekriterium:** aggregierte Steps/s mit 64–80 Envs auf der
+      Zielhardware, belegt gegen die M8.6-Baseline (Leitmetrik).
 
 ### Mx — Sauberes, deterministisches Env-Authoring (Scenario-System) — SPÄTER
 
-> Eigener Milestone. Ziel: zitierfähige, bit-reproduzierbare Env-Startzustände
-> für wissenschaftliches RL. Design aus der Discussion 2026-06-13:
+> Eigener Milestone. Ziel: zitierfähige, bit-reproduzierbare Env-Startzustände.
+> Zusätzliche Motivation (2026-07-05): vollständige Savestates + expliziter
+> RNG-Seed sind auch die Voraussetzung für **reproduzierbare Anker-Restores** —
+> Infrastruktur, auf der Forschungsideen (z.B. Anker-Archive, Startzustands-
+> Curricula) aufsetzen können, ohne sie hier vorwegzunehmen.
+> Abnahmekriterium: bit-identischer Replay über N Steps nach `load_state`.
 
 - [ ] **Zwei-Artefakt-Modell:** *Rezept* (deklarativ, portabel: SaveContext/Items
       via Randomizer-Setter + `Sram_InitDebugSave`, Entrance/Warp **oder**
@@ -242,11 +366,11 @@ während sie auf der Demo operieren.
       (nie geschrieben/gelesen); `sRandInt`/`sRandFloat` sind `static` in
       `code_800FD970.c` → liegen NICHT im erfassten `gSystemHeap`. Boot deterministisch
       seeden (`Rand_Seed`, statt `osGetTime()` in `z_play.c:539`) + RNG in den
-      Savestate aufnehmen (Accessor nötig).
-- [x] **ActorDB `numLoaded` (dieselbe Gap-Klasse, aber CRASH)** — bereits gelöst,
-      weil es harte Abstürze gab: Overlay `SoH_ActorCounts.cpp` snapshottet/restored
-      die Counter um save/load (`LeaveHouseEnv` verdrahtet). Verifiziert (50 Zyklen).
-      Beim sauberen Savestate sollte das idealerweise mit hinein.
+      Savestate aufnehmen (Accessor nötig). Kapselung in `SoH_SaveState`/
+      `SoH_LoadState`, wie beim Actor-Count-Fix (M8.5-Prinzip).
+- [x] **ActorDB `numLoaded` (dieselbe Gap-Klasse, aber CRASH)** — bereits gelöst:
+      Overlay `SoH_ActorCounts.cpp` snapshottet/restored die Counter um save/load.
+      Verifiziert (50 Zyklen). Wird in M8.5 in die Savestate-API gekapselt.
 - [ ] **RNG-Politik per Switch:** fester globaler Seed (max. Reproduzierbarkeit)
       ODER kontrollierter Pro-Episode-Seed (Generalisierung) — beides möglich.
 - [ ] **Cutscene-Starts** (z.B. Frame 0 der Intro — enthält Lern-relevante Infos):
@@ -262,37 +386,13 @@ während sie auf der Demo operieren.
       Inspector. Braucht Modus-Toggle: Authoring = ImGui an (Patch `0006` schaltet
       es im Headless-Pfad ab), Training = ImGui aus.
 
-### M8 — Erstes Training (Prototyping, NICHT optimales Lernen)
-
-> Ziel: die Pipeline end-to-end zum Laufen bringen, nicht optimal lernen. Reward
-> bleibt bewusst **sparse** (gelegentliche Exits reichen zum Testen — kommen vor).
-> Das Env bleibt **algorithmus-agnostisch** (`gym.Env`); eigene RL-Algos kommen
-> später, SB3 ist nur Prototyping-Harness.
-
-- [ ] Observation-Wrapper via `gymnasium.wrappers`: `ResizeObservation` 84×84,
-      (optional `GrayscaleObservation` — OoT hat Farb-Cues, abwägen), `FrameStackObservation` 4.
-- [ ] **SB3 PPO** als Prototyping-Harness (`CnnPolicy`), TensorBoard-Logging,
-      Checkpoints. Bewusst dünn/austauschbar — das Env-Interface bleibt framework-neutral.
-- [ ] Durchsatz messen: single-process Steps/s (Baseline für den M9-Speedup).
-- [ ] Eval + MP4 der trainierten Policy (record-Infra aus `test_warp.py` wiederverwenden).
-
-> **Architektur-Entscheidung (2026-06-13):** RL-Loop bleibt Python/`gym.Env`, NICHT
-> nach C++ portieren. Der Singleton-Constraint (SoH process-global) verbietet
-> in-process-Vektorisierung → Parallelität ist so oder so multi-process (M9), der
-> C++-Haupt­vorteil entfällt. Heiße Pfade sind schon nativ (Engine, Frame-Readback,
-> GPU). Einziger lohnender C++-Schritt mittelfristig: Preprocessing auf die C++-Seite
-> ziehen, um die M9-IPC-Payload ~100× zu verkleinern (→ M9).
-
-> **Zurückgestellt:** Reward-Shaping/Tür-Koordinate (dichteres Signal), und die
-> Folge-Tasks Kokiri Forest → Mido (komplexe Navigation, NPC-Dialog-Vermeidung).
-
-### M9 — Parallelisierung
-
-- [ ] **Multi-Process-Vector-Env** — SoH ist ein process-globaler Singleton,
-      Parallelisierung NUR über Prozesse, nicht Threads
-- [ ] Multi-GPU EGL via `EGL_PLATFORM_DEVICE_EXT` (Device-Index-Selection pro
-      Prozess)
-- [ ] Target: 64–80 parallel envs auf der Ziel-Hardware
+> **Empfohlene Reihenfolge:** M8-Baseline notieren → M8.5 (Härtung, vor dem
+> nächsten Env) → M8.6 (Step-Pfad + Grafik-Config) → M9 (Parallelisierung).
+> Mx nach Bedarf, spätestens wenn Reproduzierbarkeit für Experimente gebraucht
+> wird — der RNG-Teil ist davon der wichtigste und kann vorgezogen werden.
+>
+> **Zurückgestellt (Task-Design, nicht Infrastruktur):** Reward-Shaping /
+> Tür-Koordinate, Folge-Tasks Kokiri Forest → Mido.
 
 ## 8. Technische Pitfalls — unbedingt wissen
 
@@ -412,6 +512,7 @@ der Reset-`load_state`. Mitigation: A aus dem Action-Set nehmen ODER Dialog-Reco
 
 ---
 
-**Bei Übernahme**: Lies §6 zuerst. Der Pfad zum laufenden Trainings-Env ist
-mechanisch — Boot-Sequenz portieren, snapshot, dann fliegen die Episoden. Alles
-darunter ist erledigt und gut getestet.
+**Bei Übernahme**: Lies §7 (Roadmap — dort steht, was als nächstes dran ist und
+warum) und §8 (Pitfalls) zuerst. Das Trainings-Env läuft end-to-end; die
+anstehende Arbeit ist Härtung (M8.5), Step-Pfad-Performance (M8.6) und
+Parallelisierung (M9).
