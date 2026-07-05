@@ -41,7 +41,7 @@ These are 100% ours; upstream never sees them. Symlinked into place at build tim
 | Overlay file | Symlinked into | Purpose |
 |--------------|----------------|---------|
 | `shipwright/soh/include/soh_lib.h` | `soh/include/` | Public C API header |
-| `shipwright/soh/src/soh_lib/soh_api.c` | `soh/src/soh_lib/` | The entire RL API: input, `GetGameState`, debug view, frame-capture forwards, `BootToGameplay` |
+| `shipwright/soh/src/soh_lib/soh_api.c` | `soh/src/soh_lib/` | The entire RL API: input, `GetGameState`, debug view, frame-capture forwards, warp helpers |
 | `libultraship/include/ship/headless/Headless.h` `…/src/ship/headless/Headless.cpp` | `ship/headless/` | Runtime headless flag + programmatic pad override |
 | `libultraship/include/ship/headless/DebugView.{h,cpp}` | `ship/headless/` | Optional on-screen mirror of the FBO |
 | `libultraship/include/ship/headless/FrameCapture.{h,cpp}` | `ship/headless/` | RGB readback of the game framebuffer |

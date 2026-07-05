@@ -52,8 +52,11 @@ void SoH_ClearInput(int port) {
 /* Game state readout                                                 */
 /* ------------------------------------------------------------------ */
 
+/* rc convention: 0 = success (out filled), negative = error. "No PlayState /
+ * Player yet" is a legitimate state, NOT an error — it is reported via
+ * out->valid == 0 while the rc stays 0. The only error is out == NULL. */
 int SoH_GetGameState(SoH_GameState* out) {
-    if (out == NULL) return 0;
+    if (out == NULL) return -1;
 
     out->health     = gSaveContext.health;
     out->max_health = gSaveContext.healthCapacity;
@@ -88,7 +91,7 @@ int SoH_GetGameState(SoH_GameState* out) {
     out->rot_y = link->actor.world.rot.y;
     out->rot_z = link->actor.world.rot.z;
 
-    return 1;
+    return 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -121,36 +124,6 @@ int SoH_GetFrameDimensions(int* w, int* h) {
 
 int SoH_GetFrame(unsigned char* out) {
     return Ship_Headless_GetFrame(out);
-}
-
-/* ------------------------------------------------------------------ */
-/* Boot                                                               */
-/*                                                                    */
-/* The save anchor (data/file1.sav) auto-loads on boot, so the engine */
-/* enters GamePlay mode on its own after a few hundred frames. We just */
-/* step with neutral input until a PlayState with a spawned Player     */
-/* exists, giving every caller (smoke test, Python envs) one shared    */
-/* boot primitive instead of re-implementing the loop.                */
-/*                                                                    */
-/* SCOPE: a true return means "GamePlay mode reached, save_state works".*/
-/* It does NOT yet distinguish the title-screen attract demo from a    */
-/* controllable save-file load — that is the open M7 boot-sequence     */
-/* problem and is intentionally left to a dedicated effort. Do not      */
-/* treat a true return as "the agent now controls Link".               */
-/* ------------------------------------------------------------------ */
-
-int SoH_BootToGameplay(void) {
-    SoH_GameState gs;
-    int i;
-
-    SoH_ClearInput(0);
-    for (i = 0; i < 1200; i++) {
-        SoH_StepFrame();
-        if (SoH_GetGameState(&gs) && gs.valid) {
-            return 1;
-        }
-    }
-    return 0;
 }
 
 /* Internal helper for SoH_WarpToEntrance() (implemented in SoH_Warp.cpp).

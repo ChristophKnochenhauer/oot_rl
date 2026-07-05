@@ -1,9 +1,10 @@
 // smoke_test — end-to-end sanity check of the SoH library API.
 //
-// Boots the engine into GamePlay via the native SoH_BootToGameplay() helper,
-// then exercises the three pillars the RL env depends on: game-state readout,
-// frame capture, and save/load determinism. Returns non-zero on any failure so
-// it can be wired as a CTest regression gate.
+// Steps the engine with neutral input until a valid GamePlay state is reached
+// (the save anchor auto-loads into the attract demo — enough to exercise the
+// engine plumbing here), then exercises the three pillars the RL env depends on:
+// game-state readout, frame capture, and save/load determinism. Returns non-zero
+// on any failure so it can be wired as a CTest regression gate.
 
 #include "soh_lib.h"
 
@@ -22,9 +23,20 @@ int main(int argc, char** argv) {
     SoH_EnableFrameCapture();
 
     // --- Boot -------------------------------------------------------------
-    if (!SoH_BootToGameplay()) {
+    // Step with neutral input until a valid GamePlay state exists (the save
+    // anchor auto-loads on its own after a few hundred frames).
+    SoH_GameState boot = {};
+    int reached = 0;
+    for (int i = 0; i < 1200; i++) {
+        SoH_StepFrame();
+        if (SoH_GetGameState(&boot) == 0 && boot.valid) {
+            reached = 1;
+            break;
+        }
+    }
+    if (!reached) {
         SoH_Shutdown();
-        return fail("SoH_BootToGameplay did not reach GamePlay");
+        return fail("engine did not reach a valid GamePlay state");
     }
 
     // Let the framebuffer settle into rendered content (the first valid

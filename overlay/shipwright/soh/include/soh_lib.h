@@ -7,28 +7,34 @@
 extern "C" {
 #endif
 
+/* Return-code convention for the whole C API
+ * -----------------------------------------------------------------------------
+ * Every function that returns an int rc uses: 0 = success, negative = error.
+ * A negative rc identifies the failure (e.g. SoH_SaveState/SoH_LoadState return
+ * the negated internal SaveStateReturn code, so -4 == FAIL_WRONG_GAMESTATE / a
+ * dialog is open). It never encodes an ordinary game condition: e.g. "no
+ * PlayState / Player yet" is NOT an error — SoH_GetGameState still returns 0 and
+ * reports that state through the SoH_GameState.valid field. void functions
+ * cannot fail. The Python bindings surface any negative rc as a RuntimeError. */
+
 void SoH_Init(int argc, char** argv);
 void SoH_StepFrame(void);
 void SoH_Shutdown(void);
 void SoH_SetHeadless(int enabled);
 
-/* Drive the engine from the title screen into live GamePlay via the proven
- * File-Select sequence. Returns 1 once a valid GamePlay state is reached
- * (scene loaded, Player spawned), 0 otherwise. */
-int SoH_BootToGameplay(void);
-
 /* Drop the engine into a defined, controllable gameplay state: load the given
  * entrance/room and place Link at (x, y, z) facing rotY (binary angle). Forwards
- * to SoH's Warp(). Sidesteps the attract-demo boot path used by
- * SoH_BootToGameplay(). Call after at least one stepped frame (needs an active
- * game state). */
+ * to SoH's Warp(). This is THE path into controllable gameplay (not the
+ * attract-demo auto-boot). Call after at least one stepped frame (needs an
+ * active game state). Returns 0 on success. */
 int SoH_WarpTo(int entrance_id, int room_num, float x, float y, float z, int rot_y);
 
 /* Like SoH_WarpTo() but spawns Link at the entrance's OWN natural spawn point
  * (always in-bounds — no coordinate guessing). The coarse path into controllable
  * gameplay for M7-B3. Call from the title screen (before the attract demo's
  * PlayState exists) so SoH's Warp() takes its clean, GAMEMODE_NORMAL branch.
- * link_age: 0=adult, 1=child, -1=keep Warp()'s default (adult). */
+ * link_age: 0=adult, 1=child, -1=keep Warp()'s default (adult).
+ * Returns 0 on success. */
 int SoH_WarpToEntrance(int entrance_id, int link_age);
 
 typedef struct {
@@ -62,11 +68,17 @@ typedef struct {
     uint16_t day_time;
 } SoH_GameState;
 
+/* Fill *out with the current game state. Returns 0 on success (even when no
+ * PlayState/Player exists yet — that legitimate condition is reported via
+ * out->valid == 0, not via the rc). Returns a negative rc only on a real error
+ * (out == NULL). */
 int SoH_GetGameState(SoH_GameState* out);
 
 void SoH_EnableDebugView(uint32_t width, uint32_t height);
 void SoH_DisableDebugView(void);
 
+/* Returns 0 on success, or the negated internal SaveStateReturn code on failure
+ * (e.g. -4 == FAIL_WRONG_GAMESTATE, raised when called with a dialog open). */
 int SoH_SaveState(unsigned int slot);
 int SoH_LoadState(unsigned int slot);
 

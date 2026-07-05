@@ -6,31 +6,34 @@ Subject: [PATCH 4/4] savestates: expose SoH_SaveState/SoH_LoadState for
  library API
 
 ---
- soh/soh/Enhancements/savestates.cpp | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+ soh/soh/Enhancements/savestates.cpp | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
 diff --git a/soh/soh/Enhancements/savestates.cpp b/soh/soh/Enhancements/savestates.cpp
-index 16fb98690..5b245d16d 100644
+index 16fb98690..780823fd1 100644
 --- a/soh/soh/Enhancements/savestates.cpp
 +++ b/soh/soh/Enhancements/savestates.cpp
-@@ -817,6 +817,24 @@ extern "C" void ProcessSaveStateRequests(void) {
+@@ -817,6 +817,27 @@ extern "C" void ProcessSaveStateRequests(void) {
      OTRGlobals::Instance->gSaveStateMgr->ProcessSaveStateRequests();
  }
  
++// rc convention (whole C API): 0 = success, negative = error. Map SoH's positive
++// SaveStateReturn failure codes to negative (e.g. -4 == FAIL_WRONG_GAMESTATE) so
++// the negated code stays diagnosable while following the shared convention.
 +extern "C" int SoH_SaveState(unsigned int slot) {
 +    auto mgr = OTRGlobals::Instance->gSaveStateMgr;
-+    if (!mgr) return (int)SaveStateReturn::FAIL_BAD_REQUEST;
++    if (!mgr) return -(int)SaveStateReturn::FAIL_BAD_REQUEST;
 +    auto rtn = mgr->AddRequest({ slot, RequestType::SAVE });
-+    if (rtn != SaveStateReturn::SUCCESS) return (int)rtn;
++    if (rtn != SaveStateReturn::SUCCESS) return -(int)rtn;
 +    mgr->ProcessSaveStateRequests();
 +    return 0;
 +}
 +
 +extern "C" int SoH_LoadState(unsigned int slot) {
 +    auto mgr = OTRGlobals::Instance->gSaveStateMgr;
-+    if (!mgr) return (int)SaveStateReturn::FAIL_BAD_REQUEST;
++    if (!mgr) return -(int)SaveStateReturn::FAIL_BAD_REQUEST;
 +    auto rtn = mgr->AddRequest({ slot, RequestType::LOAD });
-+    if (rtn != SaveStateReturn::SUCCESS) return (int)rtn;
++    if (rtn != SaveStateReturn::SUCCESS) return -(int)rtn;
 +    mgr->ProcessSaveStateRequests();
 +    return 0;
 +}

@@ -11,6 +11,8 @@
 
 namespace py = pybind11;
 
+// C-API convention: 0 = success, negative rc = error. Surface any failure as a
+// Python RuntimeError carrying the rc so it stays diagnosable.
 static void check(int rc, const char* what) {
     if (rc != 0) throw std::runtime_error(std::string(what) + " failed (rc=" + std::to_string(rc) + ")");
 }
@@ -37,7 +39,7 @@ PYBIND11_MODULE(oot_rl, m) {
 
     m.def("warp_to",
         [](int entrance_id, int room_num, float x, float y, float z, int rot_y) {
-            return SoH_WarpTo(entrance_id, room_num, x, y, z, rot_y);
+            check(SoH_WarpTo(entrance_id, room_num, x, y, z, rot_y), "warp_to");
         },
         py::arg("entrance_id"),
         py::arg("room_num") = 0,
@@ -47,7 +49,7 @@ PYBIND11_MODULE(oot_rl, m) {
         py::arg("rot_y") = 0);
 
     m.def("warp_to_entrance", [](int entrance_id, int link_age) {
-        return SoH_WarpToEntrance(entrance_id, link_age);
+        check(SoH_WarpToEntrance(entrance_id, link_age), "warp_to_entrance");
     }, py::arg("entrance_id"), py::arg("link_age") = -1);
 
     m.def("enable_debug_view",
@@ -114,7 +116,7 @@ PYBIND11_MODULE(oot_rl, m) {
 
     m.def("get_game_state", []() {
         SoH_GameState s = {};
-        SoH_GetGameState(&s);
+        check(SoH_GetGameState(&s), "get_game_state");
         return s;
     });
 
